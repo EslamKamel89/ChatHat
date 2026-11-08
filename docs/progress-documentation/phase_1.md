@@ -1,0 +1,1 @@
+todo: create a table for the lessons in phase 1. so later when i complete a lesson i could add the data it is completed. the table should show the lesson name , status , date completed , notes and any data you think is needed for documenting the progress.

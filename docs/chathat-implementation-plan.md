@@ -1,10 +1,10 @@
 # ChatHat — Implementation Curriculum and Phase Plan
 
 > **Status:** Proposed implementation curriculum; implementation progress is tracked separately.  
-> **Baseline:** `docs/chathat-spec.md` v0.3.0, decisions Q001–Q061.  
+> **Baseline:** Latest GitHub `docs/chathat-spec.md` v0.3.0, decisions Q001–Q061 and INFRA-001–INFRA-006 (Docker Compose and Nginx).  
 > **Repository:** https://github.com/EslamKamel89/ChatHat  
 > **Created:** 2026-11-08  
-> **Repository inspection:** At planning time, the repository contained `docs/chathat-spec.md` and `docs/questions_and_answers.md`, with no application code.
+> **Repository inspection:** On 2026-11-08, the repository contained documentation including `docs/chathat-spec.md` and `docs/chathat-implementation-plan.md`; no application code was present in the inspected tree.
 
 ## Teaching contract
 
@@ -16,6 +16,8 @@ Each **testing lesson** must include: the contract from the previous lesson; pyt
 
 **Naming:** `Pxx-Iyy` = implementation; `Pxx-Tyy` = its immediately following test lesson. A phase is complete only after all paired tests pass, migrations work from a clean database, and the phase's end-to-end increment is demonstrable.
 
+**Container execution contract:** All development and production services run under Docker Compose. Nginx is a separate Compose service and the only public HTTP entry point; FastAPI runs behind it. Introduce the Dockerfile, base/dev Compose files, Nginx and PostgreSQL/pgvector in Phase 01. Add Redis/Celery when needed in Phase 05, and Celery Beat when scheduled jobs first require it. Tests and Alembic run in containers; production uses a Compose override, TLS, persistent data, backups, and hardened network exposure.
+
 **Non-negotiable architecture:** Shared PostgreSQL tables with strict tenant isolation (Q056); canonical document embeddings across KBs (Q057); complete original messages in authoritative LangGraph checkpoint state with derived context and transcripts (Q058/Q061); monthly AI credits with atomic reservations and measured settlement (Q059); manual plan provisioning before paid launch, payment integration before charging customers (Q060). Keep separate trace/evidence snapshots as required by the spec, without creating a second authoritative conversation transcript.
 
 **Scope gates, not extra questionnaires:** Before implementing provider-specific integrations, select a compatible provider and validate contracts. Before production release, resolve payment eligibility, data protection, retention, operational budgets and measurable release thresholds. These do not block planning or the early phases.
@@ -24,7 +26,7 @@ Each **testing lesson** must include: the contract from the previous lesson; pyt
 
 | Phase | Focus | Implementation lessons | Pytest lessons | Total |
 |---|---|---:|---:|---:|
-| 01 — Application foundation and engineering workflow | Create a reproducible FastAPI project, development infrastructure, configuration and migration lifecycle. | 4 | 4 | 8 |
+| 01 — Containerized application foundation | Build FastAPI inside Docker Compose with Nginx, typed settings, PostgreSQL/pgvector, Alembic and pytest/CI. | 6 | 6 | 12 |
 | 02 — Organizations, identity and authorization | Establish shared-table multi-tenancy and secure organization-level access before introducing tenant-owned features. | 5 | 5 | 10 |
 | 03 — Plans, entitlements and credit ledger | Make usage and cost enforcement part of the platform before invoking chargeable models; use manually provisioned plans. | 3 | 3 | 6 |
 | 04 — Chatbot configuration and knowledge-base relationships | Build the tenant-facing chatbot lifecycle and document/knowledge-base associations before ingestion. | 4 | 4 | 8 |
@@ -35,46 +37,64 @@ Each **testing lesson** must include: the contract from the previous lesson; pyt
 | 09 — Answer inspection, operations and privacy | Make retrieval evidence, model behavior and tenant activity observable without exposing secrets. | 3 | 3 | 6 |
 | 10 — Internationalization and customer-ready dashboard | Complete localized management journeys and the full chatbot customization experience. | 3 | 3 | 6 |
 | 11 — Payments and subscription lifecycle | Integrate a verified international payment provider only after onboarding/legal feasibility is resolved. | 3 | 3 | 6 |
-| 12 — Production deployment, performance and release | Harden the complete system and release against measurable security, reliability and cost gates. | 4 | 4 | 8 |
-| **Total** | | **50** | **50** | **100** |
+| 12 — Production Compose, operations and release | Harden Nginx/TLS, Compose deployments, backups, performance and security before launch. | 5 | 5 | 10 |
+| **Total** | | **53** | **53** | **106** |
 
-## Phase 01 — Application foundation and engineering workflow
+## Phase 01 — Containerized application foundation
 
-**Focus:** Create a reproducible FastAPI project, development infrastructure, configuration and migration lifecycle.
+**Focus:** Establish the same Docker Compose service architecture for local development and production from the beginning. Every implementation is followed immediately by its pytest verification. Nginx is a required service, not a deployment-only afterthought.
 
-**Exit deliverable:** A bootable service with automated smoke tests.
+**Exit deliverable:** `docker compose -f compose.yaml -f compose.dev.yaml up --build` starts Nginx → FastAPI and PostgreSQL/pgvector; migrations and pytest run inside containers, with no host-installed application dependencies.
 
-### P01-I01 — Implement: Project skeleton and application factory
+### P01-I01 — Implement: FastAPI package and application factory
 
-Create pyproject.toml, src/chathat package, FastAPI app factory, routers, lifespan, health endpoints and dependency boundaries.
+Create `pyproject.toml`, `src/chathat/`, a FastAPI application factory, typed routers, lifespan, and `/health`. Explain app initialization versus request lifecycle, dependency boundaries, and why the app factory enables isolated tests. The initial code is runnable without external infrastructure.
 
-### P01-T01 — Test: Project skeleton and application factory
+### P01-T01 — Test: FastAPI package and application factory
 
-Test app startup/shutdown, health response, routing and lifespan failure with TestClient/ASGITransport.
+Use pytest with `TestClient` or `httpx.AsyncClient`/`ASGITransport` and an explicit lifespan manager as appropriate. Verify routing, lifespan initialization/shutdown, health response and startup errors.
 
-### P01-I02 — Implement: Typed settings and environment boundaries
+### P01-I02 — Implement: Dockerfile and development Compose foundation
 
-Use pydantic-settings, environment-specific configuration, secret handling and dependency overrides; avoid global mutable state.
+Create a reproducible `Dockerfile`, `.dockerignore`, `compose.yaml`, `compose.dev.yaml`, and `.env.example`. Containerize FastAPI with bind-mounted source and Uvicorn reload in development; use named networks, dependency/health semantics, and non-root image execution where practical. Explain image build versus container start, build context, bind mounts versus volumes, Compose project isolation, and `docker compose -f compose.yaml -f compose.dev.yaml` precedence. Avoid adding Redis/Celery before the relevant phase.
 
-### P01-T02 — Test: Typed settings and environment boundaries
+### P01-T02 — Test: Dockerized FastAPI and Compose configuration
 
-Test configuration precedence, invalid settings, secret redaction and override isolation.
+Run pytest inside the FastAPI container; add pytest-driven subprocess/HTTP smoke checks that validate the Compose-rendered config and FastAPI health through its development interface. Verify rebuild/restart behavior, dependency installation, environment separation, and that the test command is reproducible from a fresh checkout. Use `docker compose config` as a supplementary validation, not a substitute for tests.
 
-### P01-I03 — Implement: PostgreSQL, SQLModel and Alembic baseline
+### P01-I03 — Implement: Nginx Compose service and internal routing
 
-Wire async database engine/session ownership, SQLModel metadata, Alembic migrations and pgvector extension prerequisites.
+Add Nginx to base/dev Compose with version-controlled `nginx/` configuration. Route public HTTP requests to FastAPI using Compose service DNS, serve appropriate static assets, set forwarded headers, and keep FastAPI's port internal by default. Explain `proxy_pass`, trusted proxy boundaries, upstream health, request-body limits and why SSE endpoints need `proxy_buffering off` and suitable timeouts. In development, Nginx may use HTTP; production TLS comes in Phase 12.
 
-### P01-T03 — Test: PostgreSQL, SQLModel and Alembic baseline
+### P01-T03 — Test: Nginx proxy and network isolation
 
-Run migrations against disposable PostgreSQL; verify upgrade, constraints, session rollback and schema consistency.
+Use pytest HTTP integration tests against the **Nginx endpoint**, not merely the FastAPI container. Check health routing, forwarded host/protocol handling under trusted proxy configuration, static response routing, oversized upload rejection and an SSE fixture that proves events arrive progressively without buffering. Verify that application and database ports are not published externally in the production Compose model.
 
-### P01-I04 — Implement: Development tooling and CI
+### P01-I04 — Implement: Typed settings and environment boundaries
 
-Add Docker Compose for PostgreSQL/Redis, lint/type checks, pytest configuration, coverage reporting and GitHub Actions.
+Use `pydantic-settings` for explicit development/test/production settings, environment overrides, secret redaction and dependency injection. Keep `.env.example` safe, actual credentials out of Git and secrets out of container images. Explain configuration loading and process startup versus per-request dependencies.
 
-### P01-T04 — Test: Development tooling and CI
+### P01-T04 — Test: Configuration and secret safety
 
-Test CI smoke path, fixture isolation and reproducible database setup; enforce green checks.
+Test settings precedence, invalid/missing production settings, secret masking, dependency override isolation and that no secret values appear in generated client-facing configuration or logs. Run tests through Compose.
+
+### P01-I05 — Implement: PostgreSQL/pgvector, SQLModel and Alembic
+
+Add PostgreSQL with pgvector to Compose using a persistent named volume and health checks. Create async engine/session ownership, SQLModel metadata, Alembic environment and first migration. Explain startup ordering versus readiness, database transactions, migration ownership, connection pooling and why pgvector integration tests require real PostgreSQL. Define a separate isolated test database/Compose project; never run tests against production or ordinary development data.
+
+### P01-T05 — Test: PostgreSQL persistence and migration lifecycle
+
+Use pytest integration fixtures against isolated PostgreSQL/pgvector. Verify extension availability, migration upgrade, constraints, rollback, session cleanup, data persistence after container restart and safe test teardown. Include explicit checks that tests cannot target the development/production database accidentally.
+
+### P01-I06 — Implement: Containerized developer commands and CI
+
+Define documented Compose commands for start/stop/logs, running Alembic and pytest, lint/type checks and a reproducible GitHub Actions pipeline. Prefer a dedicated test Compose override or profile that isolates test infrastructure. Explain one-off `docker compose run --rm` versus `exec`, exit-code propagation, deterministic dependencies, service health and CI artifact collection.
+
+### P01-T06 — Test: Fresh-checkout reproducibility and CI contract
+
+Execute the pytest suite inside the application image, run the migration smoke test from an empty test volume, verify the Nginx entry point and inspect CI failures. Test configuration validation and test-database isolation, then document exact passing commands and expected output.
+
+**Phase 01 demonstration:** A new developer can start the system through Nginx, edit Python code and observe reload, run migrations, run pytest and inspect logs without installing Python/PostgreSQL/Nginx on the host.
 
 ## Phase 02 — Organizations, identity and authorization
 
@@ -472,53 +492,71 @@ Build invoices/subscription UI, downgrade checks, support/refund flows and opera
 
 Test checkout-to-entitlement E2E, payment failure recovery, downgrade rejection and accounting consistency.
 
-## Phase 12 — Production deployment, performance and release
+## Phase 12 — Production Compose, operations and release
 
-**Focus:** Harden the complete system and release against measurable security, reliability and cost gates.
+**Focus:** Promote the same container architecture to a secure, observable, recoverable production deployment. Docker Compose remains the deployment mechanism; Nginx is the mandatory public ingress.
 
-**Exit deliverable:** A deployed, monitored, recoverable production candidate.
+**Exit deliverable:** A repeatably deployed production candidate with HTTPS, isolated internal services, tested rollback and backups, and measurable security/performance gates.
 
-### P12-I01 — Implement: Production infrastructure and deployment
+### P12-I01 — Implement: Production Compose topology and immutable images
 
-Provision API/worker/database/Redis/object storage, TLS, secrets, migrations, asset CDN and rollback pipeline.
+Create `compose.prod.yaml` extending the shared `compose.yaml`. Build/pin production-ready images, disable reload/bind mounts, configure Nginx as sole public service, internal Docker networks, PostgreSQL persistent storage, Redis, Celery worker/Beat as required, resource limits, health checks and restart policies. Define explicit Alembic migration execution and deploy/rollback procedure; avoid treating `depends_on` as application readiness or Compose as automatic multi-host HA.
 
-### P12-T01 — Test: Production infrastructure and deployment
+### P12-T01 — Test: Production Compose contracts and deploy lifecycle
 
-Test deploy/rollback, migration safety, environment isolation, secrets and startup readiness.
+Use pytest to validate rendered production Compose configuration, published ports, environment requirements, health endpoints through Nginx, startup sequencing, migration idempotency, deploy/rollback smoke paths and data persistence across ordinary container recreation. Run on isolated disposable infrastructure.
 
-### P12-I02 — Implement: Load, resilience and cost budgets
+### P12-I02 — Implement: Nginx HTTPS, SSE and proxy hardening
 
-Benchmark concurrent widget chats, checkpoint growth, vector retrieval, Celery load and credit ceilings.
+Configure valid TLS certificates, HTTPS redirect, security headers, trusted forwarded IP/protocol, host restrictions, upload body limits, static assets and SSE routes with buffering disabled and appropriate read/send timeouts. Explain proxy header spoofing, real client IP, cookie security and origin checks; Nginx rate limiting complements, but does not replace, application-layer per-tenant/session limits.
 
-### P12-T02 — Test: Load, resilience and cost budgets
+### P12-T02 — Test: TLS, routing and streaming under the production proxy
 
-Run pytest-based performance/integration suites plus dedicated load tools; validate limits and failure recovery.
+Run pytest HTTP/TLS checks through Nginx for redirect, headers, allowed hosts, client-IP trust, oversized upload rejection, static assets and incremental SSE delivery including disconnect/reconnect. Verify internal ports are not externally reachable in the test deployment.
 
-### P12-I03 — Implement: Security and privacy review
+### P12-I03 — Implement: Backups, recovery, secrets and observability
 
-Audit tenant boundaries, uploads, injection resistance, CSRF/CSP, data retention, backups and incident response.
+Configure secret injection, log retention, structured service logs, database/object-storage backups, restore runbooks, container/image update strategy, monitoring and alerting. Define RPO/RTO and explicitly test that backup/restore includes checkpoint-authoritative conversations, credit ledger, embeddings and uploaded files. Keep backup credentials separate from application credentials.
 
-### P12-T03 — Test: Security and privacy review
+### P12-T03 — Test: Disaster recovery and operations
 
-Run adversarial pytest scenarios, dependency scans and deletion/restore drills.
+Use pytest integration checks and documented restore drills to verify backup integrity, restored conversation history, credits, document references, retention cleanup and service readiness. Simulate worker/process interruption and confirm idempotent recovery; check no secrets leak into logs or artifacts.
 
-### P12-I04 — Implement: Release acceptance and operational handoff
+### P12-I04 — Implement: Load, resilience, security and cost budgets
 
-Complete core user journey, RAG evaluation fixtures, runbooks, alerts, monitoring and launch checklist.
+Benchmark concurrent widget sessions, Nginx streaming connections, PostgreSQL/pgvector filtering, checkpoint growth, Celery worker throughput, and credit-reservation contention. Review CSRF/CSP, cross-tenant access, prompt injection, upload safety and data deletion. Establish measurable performance and budget thresholds before public launch.
 
-### P12-T04 — Test: Release acceptance and operational handoff
+### P12-T04 — Test: Performance and adversarial boundaries
 
-Execute full regression, retrieval-quality evaluation, smoke tests and disaster-recovery rehearsal.
+Run pytest security/integration suites plus dedicated load tooling for realistic concurrency. Verify tenant isolation, rate limits, credit accounting, graceful failure, bounded resource use and no streaming proxy buffering. Record latency/cost and recovery evidence.
+
+### P12-I05 — Implement: Release readiness and operational handoff
+
+Complete production runbooks, health/alert dashboard, environment checklist, migration and rollback playbook, incident response, privacy review, paid-launch payment gate and acceptance checklist. Validate all core journeys through Nginx and document known operational limitations of single-host Compose.
+
+### P12-T05 — Test: Full release regression and recovery rehearsal
+
+Run all pytest suites, Playwright browser tests, retrieval-quality evaluations, staging deployment smoke tests, TLS/SSE verification and full backup/restore rehearsal. Confirm no paid customer onboarding until live payment integration and webhook verification are complete.
 
 ## Required testing architecture
 
 - **Fast unit tests:** Pure rules, state machines, RBAC policy, RRF, chunking, summary window and credit arithmetic; use pytest parametrization and simple fakes.
 - **API tests:** `httpx.AsyncClient` + `ASGITransport`, application dependency overrides and authenticated/unauthenticated sessions; validate HTTP contracts, authorization and response shapes.
 - **Database integration:** Isolated disposable PostgreSQL with pgvector and actual Alembic migrations. Verify constraints, transaction rollback, concurrency and tenant filters. Avoid SQLite as a substitute for PostgreSQL behavior.
-- **Worker integration:** Redis/Celery test worker against isolated DB and object storage adapter; test retries, duplicate delivery and eventual cleanup. Eager-mode tests alone do not validate queue semantics.
+- **Worker integration:** Add Redis and Celery services to Compose in Phase 05 (and Celery Beat when scheduled jobs are implemented); use a real test worker against isolated DB and object storage adapter; test retries, duplicate delivery and eventual cleanup. Eager-mode tests alone do not validate queue semantics.
 - **Graph/model tests:** Deterministic fake model/embedding adapters for branch contracts; actual LangGraph PostgreSQL checkpoint integration tests for restoration, retention, and concurrency.
 - **Browser end-to-end:** Playwright plus pytest integration for loader, iframe, HTMX, SSE, tab lifecycle, RTL and mobile behavior.
 - **Performance/security:** Explicit pytest markers (`unit`, `integration`, `e2e`, `slow`, `security`) and separate CI jobs; performance baselines and dedicated load tooling for realistic concurrency.
+
+## Docker Compose execution contract
+
+- **Standard development:** `docker compose -f compose.yaml -f compose.dev.yaml up --build -d`; access the application through Nginx.
+- **Tests:** Run `pytest` inside a disposable application/test service with isolated test DB/Redis. Example command (final service names determined in Phase 01): `docker compose -f compose.yaml -f compose.dev.yaml -f compose.test.yaml run --rm api pytest`. Never point the test database at the development or production database.
+- **Migrations:** Run Alembic in the application container using a one-off command and explicit environment; production migrations are a controlled deployment step.
+- **Production:** `docker compose -f compose.yaml -f compose.prod.yaml ...` with Nginx as sole public HTTP ingress; no source bind mounts or development reload.
+- **Network:** Database, Redis, Celery and FastAPI ports stay internal in production. Nginx handles HTTP routing, static assets, TLS and SSE proxy settings.
+- **Progressive services:** Nginx/API/PostgreSQL start in Phase 01; Redis/Celery join when ingestion starts; Celery Beat joins when periodic scheduling is implemented.
+- **Testing discipline:** Each implementation lesson is immediately followed by pytest verification of the implemented behavior, including container/network contracts where relevant. Supplementary `docker compose config`, `nginx -t`, and deployment shell checks do not replace pytest.
 
 ## Recommended lesson execution protocol
 
@@ -532,16 +570,18 @@ Execute full regression, retrieval-quality evaluation, smoke tests and disaster-
 
 ## Critical dependencies and design checkpoints
 
+- **Before Phase 01:** Ensure Docker Engine with Docker Compose plugin is available. Host Python, PostgreSQL, Redis and Nginx are not prerequisites.
 - **Before Phase 03:** Choose a provisional internal credit conversion rule for development; keep it versioned/configurable, not hardcoded into business logic.
-- **Before Phase 05:** Select object storage and an embedding model, confirm dimensions/multilingual suitability and ingestion resource limits.
+- **Before Phase 05:** Introduce Redis/Celery through Compose and select object storage and an embedding model, confirm dimensions/multilingual suitability and ingestion resource limits.
 - **Before Phase 06:** Select managed primary/fallback LLM providers and validate compatible response/usage contracts.
 - **Before Phase 07:** Run the LangGraph checkpoint contract spike first. Do not assume checkpoint replay, history storage, or transactions satisfy Q058/Q061 without verification; revise implementation design if tests reveal incompatibility.
 - **Before Phase 08:** Define host origin validation, iframe messaging, CSP, tab session restoration and reconnect contracts in executable tests.
 - **Before Phase 11:** Confirm merchant eligibility, tax/legal obligations and payment provider; keep manual provisioning available for test environments.
-- **Before Phase 12:** Establish measurable latency, error, RAG-quality, cost, backup and recovery release gates.
+- **Before Phase 12:** Prepare production Compose overrides, Nginx TLS certificates, deployment secrets and backup storage; establish measurable latency, error, RAG-quality, cost, backup and recovery release gates.
 
 ## Deliberate sequencing choices
 
+- **Containerized Nginx ingress is introduced before feature endpoints** so development exercises the real reverse-proxy boundary and SSE constraints from the beginning.
 - **Tenant isolation precedes documents and conversations** because retrofitting tenant ownership creates expensive security and migration risk.
 - **Entitlements and credits precede model calls** because AI operations have real costs and require concurrency-safe reservations from the first production-like flow.
 - **Knowledge-base relationships precede ingestion** so canonical documents can be reused correctly from the outset.
@@ -552,9 +592,15 @@ Execute full regression, retrieval-quality evaluation, smoke tests and disaster-
 
 ## Definition of done for every implementation/test pair
 
-- The new behavior has a documented input/output/error contract.
+- The new behavior has a documented input/output/error contract and runs through the established Docker Compose environment.
 - Tests demonstrate normal behavior, the main failure path, and tenant/security boundaries where applicable.
 - All relevant existing tests remain green; no unrelated regression is accepted.
 - Database changes have migrations; operations that can retry are idempotent.
 - Secrets are never placed in client assets, test snapshots or logs.
 - Code and tests are understandable enough for the learner to explain the execution flow without memorizing implementation details.
+
+## Revision history
+
+| Date | Revision | Change |
+|---|---|---|
+| 2026-11-08 | 1.1 | Regenerated from latest GitHub specification: Docker Compose for development and production, dedicated Nginx service, containerized pytest/Alembic, production TLS/SSE, backup and deployment tests. Expanded to 106 alternating lessons. |
