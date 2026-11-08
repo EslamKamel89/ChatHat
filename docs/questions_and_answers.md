@@ -762,3 +762,135 @@ The current interpretation is:
 8. Retrieval quality evaluation and observability.
 
 **Next batch:** Q031–Q035.
+
+## Batch 7 — Retrieval Quality and AI Reliability
+
+**Date:** 2026-11-08
+**Status:** Completed
+**Questions:** Q031–Q035
+**Specification:** `docs/chathat-spec.md`
+
+### Q031 — Industry-specific retrieval customization
+
+**Question:** After selecting an industry template, how much control should an organization have over its retrieval strategy?
+
+**Answer:** A — Retrieval is fully managed by ChatHat; customers cannot modify it.
+
+**Decision implications:**
+
+- ChatHat controls retrieval algorithms, parameters, and execution pipelines.
+- Industry templates determine the appropriate retrieval strategy.
+- Customers cannot directly edit retrieval internals.
+- ChatHat may improve retrieval behavior centrally without requiring customer configuration.
+- Customer-editable chatbot rules and branding remain separate from retrieval internals.
+- Internal retrieval configurations should be versioned for reproducible debugging.
+- Template-specific retrieval pipelines remain to be defined.
+
+**Related requirements:** PRD-009, BOT-002, RAG-001, RAG-003.
+
+### Q032 — Hybrid retrieval ranking
+
+**Question:** For the general-purpose hybrid pipeline, how should vector and full-text search results be combined?
+
+**Answer:** A — Use Reciprocal Rank Fusion (RRF) to combine ranked results.
+
+**Decision implications:**
+
+- The general-purpose retrieval pipeline combines vector similarity search with PostgreSQL full-text search.
+- Reciprocal Rank Fusion combines the ranked results.
+- RRF uses rank positions rather than directly combining incompatible raw scores.
+- Results referring to the same chunk must be deduplicated before final selection.
+- The fusion constant, retrieval depth, and final context size remain platform-managed configuration.
+- Debugging traces should preserve each search branch's ranks and the fused ranking.
+- Tenant and knowledge-base filtering must apply to both search branches.
+
+**Related requirements:** RAG-001, RAG-002, RAG-003, DBG-003.
+
+### Q033 — Insufficient-evidence detection
+
+**Question:** How should ChatHat decide whether the retrieved knowledge supports an answer?
+
+**Answer:** B — Use retrieval scores plus an LLM assessment of whether the evidence supports the answer.
+
+**Decision implications:**
+
+- Evidence sufficiency is evaluated using retrieval signals and an LLM-based assessment.
+- Retrieval scores alone do not determine whether an answer is supported.
+- The LLM assessment must consider the visitor's question and retrieved evidence.
+- Unsupported questions trigger the configured insufficient-knowledge response and support action.
+- Assessment decisions and relevant inputs must be captured for debugging.
+- The assessment model, thresholds, and handling of contradictory evidence remain undecided.
+- The assessment must not be treated as an infallible guarantee against hallucinations.
+
+**Related requirements:** RAG-006, RAG-007, DBG-003.
+
+### Q034 — AI provider failure handling
+
+**Question:** What should happen when ChatHat's primary AI model provider is unavailable or repeatedly fails?
+
+**Answer:** D — Use bounded retries followed by a compatible backup provider, with all attempts recorded for debugging.
+
+**Decision implications:**
+
+- ChatHat uses a primary AI provider and a compatible fallback provider or model.
+- Transient failures trigger bounded retries.
+- Retries must use controlled backoff and respect request deadlines.
+- After retry exhaustion, ChatHat attempts the configured fallback.
+- Each attempt must be recorded with provider, model, outcome, and relevant timing/error metadata.
+- If all providers fail, the visitor receives a clear temporary-error response.
+- Retrying must not create duplicate conversation messages or other side effects.
+- Provider selection, timeout budgets, retry counts, and fallback compatibility remain undecided.
+
+**Related requirements:** RAG-007, AI-001, DBG-003, OPS-005.
+
+### Q035 — Support action on unanswered questions
+
+**Question:** When a chatbot cannot answer from its knowledge, what type of customer-configurable support action should it offer?
+
+**Answer:** D — Multiple action types, including links and an optional built-in contact form, configurable per chatbot.
+
+**Decision implications:**
+
+- Each chatbot can configure support actions for unanswered questions.
+- Support actions may include external contact links.
+- Chatbots may offer an optional built-in contact form.
+- Contact-form submissions must be associated with the correct organization and chatbot.
+- Submitted information must be protected by tenant authorization and privacy controls.
+- Form delivery, notification destinations, validation, and retention require further decisions.
+- The widget must present support actions in its configured language.
+
+**Related requirements:** BOT-008, WID-010, RAG-006, DATA-001.
+
+---
+
+## Batch 7 — Decision Summary
+
+| ID   | Topic                       | Decision                                       |
+| ---- | --------------------------- | ---------------------------------------------- |
+| Q031 | Retrieval customization     | Platform-managed, not customer-editable        |
+| Q032 | Hybrid ranking              | Reciprocal Rank Fusion                         |
+| Q033 | Evidence sufficiency        | Retrieval signals plus LLM assessment          |
+| Q034 | AI reliability              | Bounded retries, fallback, and attempt tracing |
+| Q035 | Unanswered-question support | Configurable links and optional contact form   |
+
+## Cross-Batch Reconciliation
+
+- Q031 clarifies Q026: industry templates select retrieval behavior, but customers cannot modify retrieval internals.
+- Q032 specifies the ranking method for Q026's general-purpose hybrid search.
+- Q033 defines the evidence-sufficiency approach for Q027.
+- Q034 extends Q028: ChatHat centrally manages primary and backup AI providers.
+- Q035 defines the configurable support actions required by Q027.
+- Q034 and Q033 extend Q024's historical debugging requirement to include provider attempts and evidence assessments.
+
+## Outstanding Clarifications
+
+1. RRF fusion constant, candidate counts, and context limits.
+2. Evidence-sufficiency assessment schema and decision thresholds.
+3. Contradictory or partially relevant evidence handling.
+4. Primary and backup model/provider selection.
+5. Retry limits, deadlines, and failover triggers.
+6. Support-action types and built-in form fields.
+7. Contact-form notification, storage, and privacy rules.
+8. Whether provider failures consume customer usage quotas.
+
+**Next batch:** Q036–Q040.
