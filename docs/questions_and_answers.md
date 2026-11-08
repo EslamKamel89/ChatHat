@@ -633,3 +633,132 @@ The current interpretation is:
 7. How the UI distinguishes partially readable PDFs from fully processed documents.
 
 **Next batch:** Q026–Q030.
+
+## Batch 6 — RAG Retrieval and Answer Generation
+
+**Date:** 2026-11-08
+**Status:** Completed
+**Questions:** Q026–Q030
+**Specification:** `docs/chathat-spec.md`
+
+### Q026 — Retrieval strategy
+
+**Question:** How should ChatHat search the documents attached to a chatbot when a visitor asks a question?
+
+**Answer:** Other — The exact retrieval steps depend on the selected industry template. For general-purpose usage, use hybrid search combining vector similarity and PostgreSQL full-text search (Option B).
+
+**Decision implications:**
+
+- Retrieval behavior must be configurable by industry template.
+- The general-purpose template uses hybrid vector and full-text search.
+- Industry-specific templates may define different retrieval strategies or processing steps.
+- Retrieval must respect the chatbot's attached knowledge bases and organization boundaries.
+- Template-specific retrieval must remain compatible with ChatHat's debugging and evidence-tracing system.
+- The exact retrieval pipelines for individual industries remain undecided.
+- Whether customers can modify retrieval settings after selecting a template remains undecided.
+
+**Related requirements:** PRD-009, BOT-002, RAG-001, RAG-002, RAG-003.
+
+### Q027 — Insufficient knowledge behavior
+
+**Question:** What should the chatbot do when its knowledge bases do not contain enough information to answer a visitor's question?
+
+**Answer:** C — State that the information is unavailable and offer a configurable contact or support action.
+
+**Decision implications:**
+
+- The chatbot must not invent unsupported information when evidence is insufficient.
+- It must clearly communicate that the requested information is unavailable.
+- The organization can configure a contact or support action.
+- The fallback behavior must work across supported languages.
+- The system must define how insufficient evidence is detected.
+- The available support-action types and their configuration remain undecided.
+
+**Related requirements:** RAG-006, BOT-008, WID-010.
+
+### Q028 — AI model configuration
+
+**Question:** How much control should organization owners have over the language model used by their chatbots?
+
+**Answer:** A — ChatHat selects and manages the model centrally; customers cannot change it.
+
+**Decision implications:**
+
+- ChatHat controls model selection, provider credentials, and model configuration.
+- Customers cannot directly select language models.
+- Customers do not need to supply model API keys.
+- The platform must be able to update or replace models centrally.
+- Model usage must remain measurable for billing and operational monitoring.
+- Debugging traces should record which model and configuration generated each answer.
+- The initial model provider and model-selection policy remain undecided.
+
+**Related requirements:** RAG-007, AI-001, BILL-005, DBG-003.
+
+### Q029 — Conversation-aware retrieval
+
+**Question:** When visitors ask follow-up questions, how should ChatHat determine what to retrieve?
+
+**Answer:** D — Use the latest message first; perform contextual rewriting only when the system detects ambiguity.
+
+**Decision implications:**
+
+- The visitor's latest message is the initial retrieval-query candidate.
+- The system must determine whether the message depends on earlier conversation context.
+- When context is needed, the system rewrites the message into a standalone retrieval query.
+- Unambiguous questions should avoid unnecessary rewriting.
+- Retrieval-query rewriting must not silently introduce unsupported facts.
+- Debugging traces should record the original query, ambiguity decision, and rewritten query when applicable.
+- The ambiguity-detection mechanism remains undecided.
+
+**Related requirements:** RAG-003, MEM-001, MEM-004, DBG-003.
+
+### Q030 — Sources displayed to visitors
+
+**Question:** Should chatbot answers show which knowledge documents were used?
+
+**Answer:** A — No visitor-facing citations; only organization owners can inspect evidence in the dashboard.
+
+**Decision implications:**
+
+- Visitor-facing chatbot answers do not display source citations.
+- The platform must still capture retrieval evidence internally.
+- Organization owners can inspect evidence through the debugging dashboard.
+- Source metadata and retrieved content must be preserved sufficiently for historical debugging.
+- Evidence access must be protected by organization-level authorization.
+- Visitor-facing citation configuration is not required.
+- The relationship between owner-only access and custom RBAC permissions requires clarification.
+
+**Related requirements:** WID-010, DBG-001, DBG-002, DBG-003, AUTH-007.
+
+---
+
+## Batch 6 — Decision Summary
+
+| ID   | Topic                 | Decision                                                    |
+| ---- | --------------------- | ----------------------------------------------------------- |
+| Q026 | Retrieval             | Industry-template-specific; hybrid search for general usage |
+| Q027 | Insufficient evidence | Explain limitation and offer configurable support action    |
+| Q028 | Model selection       | Centrally managed by ChatHat                                |
+| Q029 | Follow-up questions   | Rewrite only when contextual ambiguity is detected          |
+| Q030 | Visitor citations     | None; evidence visible to organization owners               |
+
+## Cross-Batch Reconciliation
+
+- Q026 extends Q008: industry templates can define retrieval behavior in addition to rules, prompts, branding, and recommended settings.
+- Q026 preserves Q009 and Q012: retrieval must respect reusable knowledge-base and document relationships.
+- Q028 establishes centrally managed model selection without customer-supplied API keys.
+- Q029 must work with the LangGraph conversation-memory architecture.
+- Q030 reinforces Q024: historical evidence must remain inspectable even after a source document is deleted.
+
+## Outstanding Clarifications
+
+1. Retrieval strategies for individual industry templates.
+2. Whether template retrieval settings are editable after selection.
+3. Hybrid-search ranking and fusion strategy.
+4. Insufficient-evidence detection and support-action configuration.
+5. Initial AI provider, model, and failover policy.
+6. Ambiguity detection and contextual-query rewriting.
+7. Evidence-dashboard access for restricted organization roles.
+8. Retrieval quality evaluation and observability.
+
+**Next batch:** Q031–Q035.
