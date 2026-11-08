@@ -364,3 +364,139 @@
 8. Whether removing a document from a knowledge base deletes any stored embeddings.
 
 **Next batch:** Q016–Q020.
+
+## Batch 4 — Document Library and Ingestion Rules
+
+**Date:** 2026-11-08
+**Status:** Completed — one cross-batch clarification pending
+**Questions:** Q016–Q020
+**Specification:** `docs/chathat-spec.md`
+
+### Q016 — Document deletion with shared attachments
+
+**Question:** If a document is attached to several knowledge bases, what should happen when an owner deletes it from the organization library?
+
+**Answer:** A — Delete it from all knowledge bases after explicit confirmation, then clean up its searchable chunks.
+
+**Decision implications:**
+
+- Deletion is an organization-wide operation, not merely detachment from one knowledge base.
+- Before deletion, the dashboard must explicitly confirm that all knowledge-base attachments will be affected.
+- Deletion must make the document unavailable to all attached chatbots.
+- The system must clean up its searchable chunks, embeddings, and source file according to the defined deletion lifecycle.
+- Previously generated answers must not change retroactively.
+- Historical retrieval traces require a separately defined retention/redaction policy.
+- Deletion must be authorized and auditable.
+- Cleanup failures must be retryable without restoring the document to retrieval.
+
+**Related requirements:** DOC-010, DATA-004, RAG-002, DBG-009, AUTH-009.
+
+### Q017 — New document attachment
+
+**Question:** After uploading a document to the organization library, how should it become available to chatbots?
+
+**Answer:** B — Require selecting one or more knowledge bases during upload.
+
+**Decision implications:**
+
+- The upload workflow requires at least one knowledge-base selection.
+- Users may select multiple knowledge bases belonging to their organization.
+- The uploaded document is stored once and attached to all selected knowledge bases.
+- Ingestion and embedding generation must not be duplicated for each attachment.
+- Knowledge-base attachment must be validated server-side.
+- The document becomes searchable through its selected knowledge bases only after successful ingestion.
+- Adding or removing attachments after upload requires a separate management workflow.
+
+**Related requirements:** DOC-001, DOC-007, DOC-008, BOT-006, RAG-002.
+
+### Q018 — Document processing and availability
+
+**Question:** How should a document behave while ingestion is running or when only part of its content can be extracted?
+
+**Answer:** A — Only fully successful documents become searchable; any skipped content makes ingestion fail.
+
+**Decision implications:**
+
+- Ingestion is all-or-nothing at the document-publication level.
+- A document is not searchable while processing.
+- If extraction, normalization, chunking, embedding, or persistence fails, the document must not be published.
+- If any required content is skipped, ingestion must fail.
+- Partial ingestion must never be reported as successful.
+- Processing reports must identify skipped content and failure reasons.
+- Retries must not expose partially persisted chunks.
+- Failure handling must preserve tenant isolation and avoid orphaned published data.
+
+**Cross-batch clarification:**
+Q014 allows scanned PDF pages to be skipped and reported.
+Q018 requires ingestion failure if any content is skipped.
+
+The current interpretation is:
+
+- Scanned PDFs may be uploaded.
+- Unreadable pages are identified and reported.
+- If any required page is skipped, the document fails ingestion and remains unsearchable.
+- This interpretation must be explicitly confirmed before implementation.
+
+**Related requirements:** DOC-005, DOC-006, DOC-008, DOC-009, DOC-012.
+
+### Q019 — Duplicate and outdated documents
+
+**Question:** How should ChatHat handle identical files or multiple versions of similar content?
+
+**Answer:** C — Detect exact duplicates and block duplicate uploads within the organization.
+
+**Decision implications:**
+
+- ChatHat must detect exact duplicate file content within the same organization.
+- An existing identical file prevents a second upload, regardless of filename.
+- Duplicate detection must be enforced server-side.
+- A cryptographic content hash, such as SHA-256, is the proposed mechanism.
+- Concurrent uploads must not bypass duplicate prevention.
+- Duplicate detection must not expose document information belonging to another organization.
+- Different files containing similar or contradictory information are not automatically blocked.
+- Reusing an existing document through additional knowledge-base attachments remains permitted.
+
+**Related requirements:** DOC-001, DOC-009, DOC-014, DATA-001.
+
+### Q020 — Initial upload limits
+
+**Question:** How should file size and document limits be defined for the initial product?
+
+**Answer:** B — All limits vary by subscription plan, including maximum file size.
+
+**Decision implications:**
+
+- Subscription plans define maximum individual file size.
+- Plans may also define document count, total storage, and ingestion-related limits.
+- Upload requests must be checked against current plan entitlements.
+- Limits must be enforced server-side, including during concurrent uploads.
+- Upload and ingestion failures must have defined quota-accounting behavior.
+- Plan changes must have defined consequences for existing stored documents.
+- Exact numerical limits remain undecided.
+
+**Related requirements:** DOC-011, BILL-005, BILL-008, JOB-005.
+
+---
+
+## Batch 4 — Decision Summary
+
+| ID   | Topic                 | Decision                                         |
+| ---- | --------------------- | ------------------------------------------------ |
+| Q016 | Document deletion     | Delete globally after explicit confirmation      |
+| Q017 | Document attachment   | Select one or more knowledge bases during upload |
+| Q018 | Ingestion publication | All-or-nothing; skipped content causes failure   |
+| Q019 | Duplicate uploads     | Block identical files within the organization    |
+| Q020 | Upload limits         | All limits vary by subscription plan             |
+
+## Outstanding Clarifications
+
+1. Reconcile Q014 and Q018 regarding scanned PDF pages.
+2. Define whether an ingestion failure retains the original uploaded file for retry.
+3. Define how duplicate uploads can attach an existing document to additional knowledge bases.
+4. Define whether document deletion is immediately logical, followed by asynchronous physical cleanup.
+5. Define historical trace retention after source-document deletion.
+6. Define exact plan limits and quota-accounting rules.
+7. Define behavior when subscription downgrades place an organization above its new limits.
+8. Define whether concurrent duplicate uploads are rejected through a database uniqueness constraint or equivalent atomic mechanism.
+
+**Next batch:** Q021–Q025.
