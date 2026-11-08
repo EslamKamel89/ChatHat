@@ -1,0 +1,115 @@
+# Python bytecode and build artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+build/
+dist/
+*.egg-info/
+.eggs/
+*.egg
+pip-wheel-metadata/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+.python-version
+
+# Python tooling and test output
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+.tox/
+.nox/
+.mypy_cache/
+.pyright/
+.ruff_cache/
+.hypothesis/
+.pyre/
+.pytype/
+*.prof
+test-results/
+playwright-report/
+blob-report/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+secrets/
+!.gitkeep
+
+# IDE and OS metadata
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.history/
+
+# Logs and runtime state
+*.log
+logs/
+run/
+tmp/
+temp/
+*.pid
+*.pid.lock
+
+# Local uploads and generated data (do not commit customer documents)
+uploads/
+media/
+storage/
+data/uploads/
+data/processed/
+data/embeddings/
+artifacts/
+
+# Local databases and backups
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+*.sql.gz
+*.dump
+*.backup
+backups/
+pgdata/
+postgres-data/
+redis-data/
+
+# Docker Compose local-only overrides
+compose.override.yaml
+compose.override.yml
+docker-compose.override.yml
+
+# Frontend build output and dependencies
+node_modules/
+.npm/
+.pnpm-store/
+.yarn/cache/
+.next/
+.nuxt/
+.svelte-kit/
+.vite/
+*.tsbuildinfo
+
+# Documentation tool caches
+.mkdocs_cache/
+site/
+
+# Local agent scratch files (keep AGENTS.md and project docs tracked)
+.codex/tmp/
+.codex/cache/
