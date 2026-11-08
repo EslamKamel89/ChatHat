@@ -895,6 +895,149 @@ The current interpretation is:
 
 **Next batch:** Q036–Q040.
 
+## Batch 8 — Conversation Memory and LangGraph State
+
+**Date:** 2026-11-08
+**Status:** Completed
+**Questions:** Q036–Q040
+**Specification:** `docs/chathat-spec.md`
+
+### Q036 — Conversation memory structure
+
+**Question:** How should ChatHat represent conversation history when the conversation becomes too long to fit efficiently into the model context?
+
+**Answer:** B — Keep recent messages verbatim and maintain a rolling summary of older conversation history.
+
+**Decision implications:**
+
+- Conversation memory consists of a rolling summary and a recent-message window.
+- Recent messages are provided to the model in their original form.
+- Older messages are represented by a continuously updated summary.
+- The complete conversation transcript must remain separately available for dashboard inspection.
+- Summarization must not modify the original stored messages.
+- The rolling summary is used for context management, not as a replacement for historical records.
+
+**Related requirements:** MEM-001, MEM-002, MEM-003, MEM-004.
+
+### Q037 — When to update the rolling summary
+
+**Question:** If ChatHat uses a rolling summary, when should it summarize older conversation messages?
+
+**Answer:** Other — Maintain a configurable number of verbatim messages. Whenever the conversation grows beyond that window, merge the oldest messages outside the window into the existing rolling summary.
+
+**User-provided example:**
+
+With a verbatim window of 3 messages:
+
+- At 5 messages:
+  - Summary covers messages 1–2.
+  - Messages 3–5 remain verbatim.
+- When message 6 is added:
+  - Update the summary using the previous summary plus message 3.
+  - Messages 4–6 remain verbatim.
+
+**Decision implications:**
+
+- The verbatim window size is configurable.
+- The window is measured in messages, not necessarily conversation turns.
+- Summarization is incremental rather than rebuilding the summary from the entire transcript.
+- Once a message moves into the summary, it is removed from the verbatim model-context window.
+- A new message can cause the oldest verbatim message to be merged into the summary.
+- Each message must be summarized exactly once as the window advances.
+- The summary update must preserve relevant facts and conversational context.
+- The original messages remain stored independently of the summary.
+- The exact counting rules for system, tool, user, and assistant messages remain undecided.
+- Token-budget safeguards may still be required for unusually long individual messages.
+
+**Related requirements:** MEM-002, MEM-003, MEM-004, MEM-007.
+
+### Q038 — Visitor session and page refresh
+
+**Question:** Batch 1 established that conversations end when the browser tab closes. What should happen if a visitor refreshes the same tab?
+
+**Answer:** A — Preserve the conversation on refresh, but do not intentionally restore it after the tab closes.
+
+**Decision implications:**
+
+- Refreshing the same browser tab preserves the visitor's conversation.
+- The widget restores the active conversation after a normal refresh.
+- Closing the tab ends the visitor's ability to resume that conversation.
+- Browser-tab-scoped storage may be used for session identity.
+- Server-side conversation and debugging records may outlive the browser-tab session.
+- Session identifiers must be validated and scoped to the correct chatbot.
+- Browser session restoration and duplicated-tab behavior require implementation rules.
+
+**Related requirements:** USR-003, WID-008, MEM-005.
+
+### Q039 — Concurrent messages in one conversation
+
+**Question:** What should happen if a visitor sends another message while the previous answer is still generating?
+
+**Answer:** A — Disable sending another message until the current response completes.
+
+**Decision implications:**
+
+- Only one answer-generation operation is permitted per conversation at a time.
+- The widget disables additional message submission while a response is generating.
+- Server-side concurrency protection is required because frontend disabling alone is insufficient.
+- Conversation memory and LangGraph state updates must remain sequential.
+- Duplicate requests must not produce duplicate messages or corrupt conversation state.
+- Failure, timeout, or cancellation must release the conversation for another message.
+- The exact cancellation and stale-lock recovery policies remain undecided.
+
+**Related requirements:** MEM-006, MEM-008, WID-009, OPS-005.
+
+### Q040 — Conversation history visibility
+
+**Question:** Which conversation information should organization owners be able to inspect in the dashboard?
+
+**Answer:** D — Full transcript and debugging traces, with configurable retention and access controls.
+
+**Decision implications:**
+
+- Authorized organization users can inspect full conversation transcripts.
+- Associated debugging traces are accessible from conversation history.
+- Transcript and trace retention are configurable.
+- Access is controlled through organization-scoped authorization.
+- Historical traces remain available after source-document deletion, subject to the configured retention and applicable privacy requirements.
+- The system must distinguish raw transcripts from rolling memory summaries.
+- Retention defaults, maximum durations, and restricted-role permissions remain undecided.
+
+**Related requirements:** MEM-011, DBG-001, DBG-002, DBG-009, AUTH-007.
+
+---
+
+## Batch 8 — Decision Summary
+
+| ID   | Topic               | Decision                                                                 |
+| ---- | ------------------- | ------------------------------------------------------------------------ |
+| Q036 | Memory structure    | Rolling summary plus verbatim recent messages                            |
+| Q037 | Summary updates     | Incremental updates when messages leave the configurable verbatim window |
+| Q038 | Refresh behavior    | Preserve conversation on refresh; end on tab close                       |
+| Q039 | Concurrent messages | One active response per conversation                                     |
+| Q040 | Dashboard history   | Full transcript and traces with configurable retention and access        |
+
+## Cross-Batch Reconciliation
+
+- Q037 specifies the rolling-summary algorithm selected in Q036.
+- Q038 clarifies the browser-tab session behavior selected in Q005.
+- Q039 protects the sequential memory updates required by Q037.
+- Q040 supports Q024's requirement to preserve historical debugging evidence after source-document deletion.
+- Q040 must operate within the organization-scoped RBAC model selected in Q007.
+
+## Outstanding Clarifications
+
+1. Whether the verbatim window counts individual messages or complete user/assistant exchanges.
+2. Whether system and tool messages count toward the window.
+3. Maximum summary length and behavior when a summary becomes too large.
+4. Whether summarization runs synchronously or asynchronously.
+5. Handling failed summary updates and concurrent conversation requests.
+6. Browser-tab duplication and browser session restoration.
+7. Default transcript/trace retention and privacy controls.
+8. Restricted-role permissions for transcript and trace inspection.
+
+**Next batch:** Q041–Q045.
+
 ## Batch 9 — Memory Lifecycle and Conversation Retention
 
 **Date:** 2026-11-08
@@ -1027,3 +1170,135 @@ The current interpretation is:
 8. How retention configuration changes affect existing records.
 
 **Next batch:** Q046–Q050.
+
+## Batch 10 — Chatbot Widget and Website Integration
+
+**Date:** 2026-11-08
+**Status:** Completed
+**Questions:** Q046–Q050
+**Specification:** `docs/chathat-spec.md`
+
+### Q046 — Website domain authorization
+
+**Question:** Which websites should be allowed to load and use an organization's embedded chatbot?
+
+**Answer:** C — Registered domains in production, with a separate testing mode for localhost and staging.
+
+**Decision implications:**
+
+- Production chatbot usage is restricted to registered domains.
+- Each chatbot must have a domain authorization configuration.
+- Localhost and staging environments are supported through a separate testing mode.
+- Production domain restrictions must not be bypassed through testing configuration.
+- Domain validation must be enforced server-side for widget requests.
+- The widget's public identifier is not a secret and must not serve as its sole authorization mechanism.
+- Allowed-origin matching rules, staging-domain registration, and testing-mode access controls remain undecided.
+
+**Related requirements:** WID-001, WID-003, WID-004, SEC-005.
+
+### Q047 — Widget customization
+
+**Question:** How much control should customers have over their chatbot's appearance?
+
+**Answer:** B — Advanced customization: basic settings plus fonts, dimensions, launcher icon, and message styles.
+
+**Decision implications:**
+
+- Customers can customize chatbot name, logo, primary color, welcome message, and position.
+- Customers can also configure fonts, dimensions, launcher icon, and message styling.
+- Widget appearance settings belong to chatbot configuration.
+- Appearance changes follow the chatbot Draft/Publish workflow selected in Q010.
+- Published appearance changes affect the widget after the new configuration is loaded.
+- Custom CSS injection is not required.
+- Allowed fonts, dimensions, colors, and responsive constraints remain undecided.
+
+**Related requirements:** BOT-003, BOT-007, WID-005, WID-006.
+
+### Q048 — Widget installation method
+
+**Question:** How should customers install ChatHat on their websites?
+
+**Answer:** B — JavaScript snippet plus an optional custom HTML container for inline embedding.
+
+**Decision implications:**
+
+- ChatHat provides a JavaScript installation snippet.
+- The default integration creates a floating chatbot widget.
+- Customers may alternatively mount the chatbot inside a designated HTML container.
+- Both integration modes must use the same chatbot identity, configuration, security rules, and conversation API.
+- The widget must avoid interfering with the host website's styles and scripts.
+- Framework-specific SDKs are not required for the initial release.
+- Script-loading behavior, inline container configuration, and compatibility requirements remain undecided.
+
+**Related requirements:** WID-001, WID-002, WID-005.
+
+### Q049 — Chatbot availability controls
+
+**Question:** How should owners control whether their published chatbot accepts visitor messages?
+
+**Answer:** C — Manual enable/disable plus business-hours scheduling and an offline support action.
+
+**Decision implications:**
+
+- Organization owners can manually enable or disable a chatbot.
+- Each chatbot can have a business-hours schedule.
+- The chatbot becomes unavailable outside configured operating hours.
+- When unavailable, the widget presents a configurable offline message and support action.
+- Availability must be enforced server-side, not only in the widget UI.
+- Schedule evaluation must use a defined time zone.
+- Manual override precedence, holidays, overnight schedules, and in-progress conversation behavior remain undecided.
+
+**Related requirements:** BOT-007, BOT-008, WID-009, WID-010.
+
+### Q050 — Widget response delivery
+
+**Question:** How should AI-generated answers appear to website visitors?
+
+**Answer:** B — Stream generated text progressively using Server-Sent Events (SSE).
+
+**Decision implications:**
+
+- ChatHat streams AI-generated response text progressively to the widget.
+- The widget renders partial answer content as it arrives.
+- SSE is the selected server-to-client streaming mechanism.
+- A completed response must be persisted as the authoritative assistant message.
+- Streaming interruptions must not corrupt conversation state.
+- The widget must distinguish partial, completed, failed, and cancelled responses.
+- Streaming endpoints must enforce chatbot, session, and domain authorization.
+- Reconnection, timeout, cancellation, and usage-accounting behavior remain undecided.
+
+**Related requirements:** WID-007, WID-009, MEM-006, OPS-005.
+
+---
+
+## Batch 10 — Decision Summary
+
+| ID   | Topic                | Decision                                             |
+| ---- | -------------------- | ---------------------------------------------------- |
+| Q046 | Domain authorization | Registered production domains; separate testing mode |
+| Q047 | Appearance           | Advanced widget customization                        |
+| Q048 | Installation         | JavaScript snippet and optional inline container     |
+| Q049 | Availability         | Manual controls, business hours, offline support     |
+| Q050 | Response delivery    | Server-Sent Events streaming                         |
+
+## Cross-Batch Reconciliation
+
+- Q046 adds deployment restrictions to the widget integration model.
+- Q047 follows Q010: appearance settings must use Draft/Publish.
+- Q048 supports both floating and inline embedding without separate chatbot implementations.
+- Q049 extends Q027 and Q035: offline support actions are available when the chatbot cannot accept messages.
+- Q050 must respect Q039: one active response per conversation.
+- Q050 must also respect Q038: refreshing a tab can restore the conversation, but not necessarily an interrupted stream.
+
+## Outstanding Clarifications
+
+1. Domain matching rules, subdomains, and local testing authorization.
+2. Widget isolation from host-page CSS and JavaScript.
+3. Allowed customization values and responsive behavior.
+4. Business-hours time zones, holidays, and manual override precedence.
+5. Whether an already-started response continues when business hours end.
+6. SSE stream lifecycle, reconnection, cancellation, and timeout behavior.
+7. How interrupted streams are persisted and billed.
+8. Whether widget configuration is cached and how published updates invalidate it.
+
+**Next batch:** Q051–Q055.
