@@ -500,3 +500,136 @@ The current interpretation is:
 8. Define whether concurrent duplicate uploads are rejected through a database uniqueness constraint or equivalent atomic mechanism.
 
 **Next batch:** Q021–Q025.
+
+## Batch 5 — Ingestion Failures, Deletion, and Storage Lifecycle
+
+**Date:** 2026-11-08
+**Status:** Completed
+**Questions:** Q021–Q025
+**Specification:** `docs/chathat-spec.md`
+
+### Q021 — Scanned PDF conflict resolution
+
+**Question:** Q014 allows skipped unreadable pages, but Q018 requires failure when any content is skipped. Which rule should govern?
+
+**Answer:** B — Exception for scanned pages: skip and report unreadable PDF pages, publish readable pages; all other processing failures remain fatal.
+
+**Decision implications:**
+
+- Scanned or image-only PDF pages do not require OCR in the initial release.
+- Pages containing extractable text are processed normally.
+- Pages without extractable text are skipped and reported.
+- A partially readable PDF can become searchable using its successfully extracted pages.
+- Other extraction, chunking, embedding, and persistence failures remain fatal.
+- A PDF containing no usable text must not be published as searchable.
+- The processing report must identify skipped pages and indicate partial coverage.
+- The Q021 exception supersedes the strict skipped-content rule from Q018 specifically for unreadable PDF pages.
+
+**Related requirements:** DOC-005, DOC-006, DOC-008, DOC-012.
+
+### Q022 — Failed ingestion and retry behavior
+
+**Question:** If a file fails extraction or embedding, what should ChatHat retain and what can the customer do next?
+
+**Answer:** A — Keep the original file and failed job report; allow retry without reuploading.
+
+**Decision implications:**
+
+- Failed ingestion does not automatically delete the uploaded source file.
+- The original file remains available for retry.
+- Failed jobs retain their status, error summary, and processing report.
+- Authorized users can initiate another ingestion attempt.
+- Retries must be idempotent and must not create duplicate searchable chunks.
+- Each retry attempt should be distinguishable in job history.
+- Failed content remains unavailable for retrieval until successful publication.
+- Retention limits for repeatedly failing files remain undecided.
+
+**Related requirements:** DOC-006, DOC-009, JOB-003, JOB-004.
+
+### Q023 — Duplicate upload experience
+
+**Question:** If the uploaded file already exists in the organization's library, what should the user experience be?
+
+**Answer:** A — Block the duplicate and show the existing document, with an option to attach it to additional knowledge bases.
+
+**Decision implications:**
+
+- Exact duplicate files cannot create additional document records within the same organization.
+- The user receives a clear duplicate-file response.
+- The response identifies the existing document when the user is authorized to view it.
+- The user can attach the existing document to additional knowledge bases.
+- Reusing a document does not require uploading or embedding it again.
+- Duplicate detection must remain tenant-scoped and concurrency-safe.
+- An existing failed document may require retry rather than another upload; exact handling remains undecided.
+
+**Related requirements:** DOC-001, DOC-009, DOC-014, BOT-006.
+
+### Q024 — Document deletion and historical traces
+
+**Question:** After an owner deletes a document, what should happen to historical answer traces that reference its content?
+
+**Answer:** Other — Historical traces must be preserved even after the user deletes the source document. They may be needed later to debug problems with previously generated chatbot answers.
+
+**Decision implications:**
+
+- Deleting a source document removes it from active knowledge and retrieval.
+- Historical answer traces remain available for debugging.
+- Traces must preserve sufficient evidence to reconstruct which retrieved content influenced an earlier answer.
+- Historical trace content must not depend on the continued existence of the source document or its vector chunks.
+- Trace records should include immutable evidence snapshots and source identifiers.
+- Access to historical traces must remain tenant-authorized.
+- Retention duration, privacy deletion requests, and sensitive-data redaction require separate policies.
+- The decision does not establish indefinite retention or override applicable legal deletion obligations.
+
+**Related requirements:** DBG-001, DBG-003, DBG-004, DBG-009, DOC-010, MEM-011.
+
+### Q025 — Subscription downgrade over limits
+
+**Question:** If a customer downgrades to a plan with lower storage, document, or chatbot limits, what should ChatHat do?
+
+**Answer:** C — Prevent the downgrade until the customer manually reduces resource usage.
+
+**Decision implications:**
+
+- A requested downgrade must be checked against the destination plan's limits.
+- The downgrade is rejected if existing resource usage exceeds those limits.
+- The dashboard must explain which limits prevent the downgrade.
+- Customers must manually reduce usage before retrying.
+- The system must not automatically delete documents or chatbots.
+- Server-side validation must enforce downgrade eligibility.
+- Billing-provider subscription changes must remain consistent with internal entitlements.
+- The behavior of scheduled downgrades and externally initiated plan changes remains undecided.
+
+**Related requirements:** BILL-005, BILL-008, BILL-009, DOC-011.
+
+---
+
+## Batch 5 — Decision Summary
+
+| ID   | Topic                  | Decision                                     |
+| ---- | ---------------------- | -------------------------------------------- |
+| Q021 | Scanned PDFs           | Publish readable pages; report skipped pages |
+| Q022 | Failed ingestion       | Retain original file and allow retry         |
+| Q023 | Duplicate uploads      | Block duplicate and offer reuse              |
+| Q024 | Historical traces      | Preserve evidence after source deletion      |
+| Q025 | Subscription downgrade | Block downgrade until usage fits new plan    |
+
+## Cross-Batch Reconciliation
+
+- Q021 refines Q014 and creates a specific exception to Q018.
+- Q022 extends the failure-handling behavior established by Q018.
+- Q023 defines the reuse workflow required by Q012 and Q019.
+- Q024 clarifies historical debugging behavior following Q016.
+- Q025 defines downgrade behavior for the plan-based limits selected in Q020.
+
+## Outstanding Clarifications
+
+1. Trace retention duration and privacy-driven deletion.
+2. Whether complete prompts and model responses are retained alongside retrieved evidence.
+3. Handling duplicate files whose original ingestion failed.
+4. Failed-file retention and retry limits.
+5. Scheduled downgrades and payment-provider reconciliation.
+6. Numerical quotas for each subscription plan.
+7. How the UI distinguishes partially readable PDFs from fully processed documents.
+
+**Next batch:** Q026–Q030.
