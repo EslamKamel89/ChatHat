@@ -894,3 +894,136 @@ The current interpretation is:
 8. Whether provider failures consume customer usage quotas.
 
 **Next batch:** Q036–Q040.
+
+## Batch 9 — Memory Lifecycle and Conversation Retention
+
+**Date:** 2026-11-08
+**Status:** Completed
+**Questions:** Q041–Q045
+**Specification:** `docs/chathat-spec.md`
+
+### Q041 — Verbatim window counting
+
+**Question:** What exactly should count toward the configurable recent-message window?
+
+**Answer:** A — Individual user and assistant messages; system and tool messages are excluded.
+
+**Decision implications:**
+
+- The verbatim window counts individual user and assistant messages, not complete exchanges.
+- System and tool messages do not count toward the configured window size.
+- A window size of three means three individual user/assistant messages.
+- Older user/assistant messages are incrementally merged into the rolling summary.
+- System instructions remain separately managed and are not removed because the verbatim window advances.
+- Tool-message storage and model-context inclusion require separate rules.
+- The complete original conversation transcript remains stored independently of the rolling summary.
+
+**Related requirements:** MEM-001, MEM-002, MEM-003, MEM-004.
+
+### Q042 — Rolling summary size control
+
+**Question:** What should ChatHat do when the accumulated rolling summary becomes too long?
+
+**Answer:** B — Apply a maximum token budget and periodically compress the existing summary while preserving important context.
+
+**Decision implications:**
+
+- Rolling summaries have a configurable maximum token budget.
+- Summary updates must respect that budget.
+- When necessary, the existing summary is compressed while preserving important conversational context.
+- Compression must not change the original stored transcript.
+- The system must track the last message included in the summary.
+- Summary compression and incremental updates must be retry-safe.
+- The exact token limit, compression strategy, and preservation criteria remain undecided.
+
+**Related requirements:** MEM-003, MEM-004, MEM-007.
+
+### Q043 — Summary update execution
+
+**Question:** When a message leaves the verbatim window, how should its summary update be executed?
+
+**Answer:** A — Synchronously within the conversation request before generating the next answer.
+
+**Decision implications:**
+
+- Required summary updates occur during the active conversation request.
+- The summary must be updated before the next answer is generated.
+- Answer generation uses the updated summary and current verbatim window.
+- The summary update and its cursor must be persisted consistently.
+- A failed summary update must not silently advance the summary cursor.
+- Only one state-changing conversation operation may execute at a time.
+- Summarization latency becomes part of the response-time budget.
+- Failure recovery and retry behavior remain to be defined.
+
+**Related requirements:** MEM-003, MEM-006, MEM-007, MEM-008.
+
+### Q044 — Transcript and trace retention
+
+**Question:** What should be the default policy for stored visitor conversations and debugging traces?
+
+**Answer:** B — Retain for 90 days by default, with organization-configurable retention within platform limits.
+
+**Decision implications:**
+
+- The default retention period for transcripts and debugging traces is 90 days.
+- Organizations can configure retention within platform-defined limits.
+- Expired records must be removed through an automated retention process.
+- Historical traces remain available after source-document deletion only while they remain within their applicable retention period.
+- Retention applies independently of browser-tab session lifetime.
+- Privacy-related deletion requests may require earlier removal.
+- The permitted retention range, deletion schedule, and backup-handling rules remain undecided.
+
+**Related requirements:** MEM-011, DBG-009, DATA-004, OPS-005.
+
+### Q045 — Dashboard access to sensitive conversation data
+
+**Question:** How should custom organization roles control access to visitor transcripts and debugging evidence?
+
+**Answer:** C — Any organization member with chatbot management permission can inspect all transcripts and traces.
+
+**Decision implications:**
+
+- Organization owners have full access to their organization's transcripts and debugging traces.
+- Other organization members gain transcript and trace access through chatbot management permission.
+- A separate transcript-viewing permission is not required by this decision.
+- A separate debugging-trace permission is not required by this decision.
+- All transcript and trace queries must enforce organization-level authorization.
+- Users without chatbot management permission cannot inspect these records.
+- The meaning of "all transcripts and traces" across multiple chatbots requires explicit confirmation.
+- The dashboard should make the data-access consequences of granting chatbot management permission clear.
+
+**Related requirements:** AUTH-007, AUTH-009, DBG-001, DBG-002, MEM-011.
+
+---
+
+## Batch 9 — Decision Summary
+
+| ID   | Topic                 | Decision                                                         |
+| ---- | --------------------- | ---------------------------------------------------------------- |
+| Q041 | Verbatim window       | Individual user/assistant messages                               |
+| Q042 | Summary size          | Token budget with periodic compression                           |
+| Q043 | Summary execution     | Synchronous before answer generation                             |
+| Q044 | Data retention        | 90 days by default; configurable within limits                   |
+| Q045 | Sensitive-data access | Chatbot management permission grants transcript and trace access |
+
+## Cross-Batch Reconciliation
+
+- Q041 defines the message-counting rule for Q037.
+- Q042 adds bounded summary growth to Q036 and Q037.
+- Q043 establishes the execution timing for the rolling-summary algorithm.
+- Q044 defines the default retention policy for Q024 and Q040.
+- Q045 clarifies access to historical evidence under the custom RBAC model selected in Q007.
+- Q045 also clarifies Q030: organization owners and authorized chatbot managers can inspect internal evidence, while website visitors cannot see citations.
+
+## Outstanding Clarifications
+
+1. Maximum and minimum configurable retention periods.
+2. Exact rolling-summary token budget and compression behavior.
+3. Summary-update failure recovery.
+4. Whether chatbot management permission grants access across every chatbot or only managed chatbots.
+5. Handling of system and tool messages in model context.
+6. Retention cleanup scheduling and backup deletion.
+7. Privacy-driven deletion of transcripts and debugging evidence.
+8. How retention configuration changes affect existing records.
+
+**Next batch:** Q046–Q050.
