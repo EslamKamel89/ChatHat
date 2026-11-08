@@ -221,3 +221,56 @@ Shared-table organization scoping must be incorporated into the initial data mod
 - Database index optimization until representative data and load measurements exist.
 
 **Next:** Clarify B1 before implementing the conversation persistence subsystem. No additional general-purpose questionnaire is required at this stage.
+
+## Q061 — Authoritative Conversation History
+
+**Date:** 2026-11-08
+**Status:** CONFIRMED
+**Selected answer:** A
+
+### Decision
+
+ChatHat shall retain the complete original conversation message history in durable LangGraph checkpoint state.
+
+The rolling summary and recent-message window shall be constructed separately for LLM input.
+
+Dashboard transcripts shall be derived from authoritative checkpointed history rather than maintained as an independently authoritative transcript store.
+
+### Architectural contract
+
+1. Every original user and assistant message must remain recoverable from authoritative checkpointed conversation history throughout its retention period.
+2. Summarization must never replace, overwrite, or discard original historical messages.
+3. The model receives only the applicable rolling summary, recent verbatim messages, trusted instructions, and retrieved evidence.
+4. The dashboard derives the complete transcript from checkpointed history.
+5. Optional transcript read projections must be rebuildable and must not become independent authorities.
+6. Summary updates must preserve the correspondence between the summary and the last message summarized.
+7. Conversation operations must enforce server-side serialization and idempotency.
+8. Completed assistant responses must be durably recorded even when the SSE connection is interrupted.
+9. Checkpoint-history retention and deletion must respect the configured conversation retention period and applicable privacy requirements.
+10. Historical answer traces must preserve the evidence and configuration needed for debugging.
+
+### Reconciliation with previous decisions
+
+- Q058: LangGraph checkpoints remain the sole authority for conversation history and response state.
+- Q036–Q037: Rolling summaries and recent-message windows remain the model-context strategy.
+- Q041–Q043: Message counting, summary compression, and synchronous summarization remain unchanged.
+- Q040 and Q044: Full transcripts and 90-day default retention remain required.
+- Q054: Server-side generation continues after transport interruption, and completed answers remain recoverable within the same tab session.
+
+### Specification requirements affected
+
+MEM-002, MEM-003, MEM-004, MEM-007, MEM-008, MEM-010,
+MEM-011, DBG-002, DBG-003, DBG-009, DATA-003, API-003,
+WID-007, SEC-007.
+
+### Implementation constraints
+
+- Verify the selected LangGraph checkpointer's full-state persistence and restoration semantics.
+- Measure checkpoint growth and serialization costs for long conversations.
+- Design crash recovery and idempotent generation completion.
+- Ensure derived transcript projections can be rebuilt.
+- Define checkpoint retention and deletion without compromising historical evidence.
+
+**Outcome:** Q058's authoritative-history ambiguity is resolved.
+
+**Implementation status:** Not started.
