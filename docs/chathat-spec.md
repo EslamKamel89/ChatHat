@@ -1,7 +1,7 @@
 # ChatHat — Product Requirements Specification
 
-> **Document version:** 0.2.0  
-> **Status:** Draft — decisions Q001–Q055 incorporated; unresolved implementation details remain  
+> **Document version:** 0.3.0  
+> **Status:** Draft — decisions Q001–Q061 incorporated; unresolved implementation details remain  
 > **Last updated:** 2026-11-08  
 > **Repository (code SSOT):** https://github.com/EslamKamel89/ChatHat  
 > **Document role:** Product and behavioral requirements; not evidence that features are implemented.
@@ -134,13 +134,13 @@ If specification and code disagree, report the discrepancy rather than silently 
 
 **AUTH-001 [PROPOSED, P0]** The dashboard shall require authenticated users.
 
-**AUTH-002 [PROPOSED, P0]** Every organization-owned resource shall be scoped by organization identity and permissions.
+**AUTH-002 [CONFIRMED, P0]** Every organization-owned resource is authorized server-side within the authenticated organization. Shared PostgreSQL tables use an enforceable organization relationship; untrusted client-supplied organization IDs do not establish access (Q056).
 
 **AUTH-003 [PROPOSED, P0]** A chatbot shall belong to exactly one organization at a time.
 
-**AUTH-004 [PROPOSED, P0]** Server-side authorization shall protect all organization, document, conversation, trace, and billing endpoints; hiding controls in the UI is insufficient.
+**AUTH-004 [CONFIRMED, P0]** All organization, document, conversation, checkpoint, trace, credit, and billing endpoints enforce server-side tenant authorization; hiding UI controls is insufficient (Q056).
 
-**AUTH-005 [PROPOSED, P0]** The platform shall enforce isolation during retrieval, including vector search filters, not just when rendering results.
+**AUTH-005 [CONFIRMED, P0]** Tenant isolation applies to relational queries and vector retrieval, including organization and chatbot/knowledge-base membership filters (Q056–Q057).
 
 **AUTH-006 [CONFIRMED, P0]** Support email/password and Google OAuth; verification, recovery and account-linking policies remain OPEN.
 
@@ -148,7 +148,7 @@ If specification and code disagree, report the discrepancy rather than silently 
 
 **AUTH-008 [PROPOSED, P1]** Consider PostgreSQL row-level security as defense in depth after application-level tenant scoping is established and tested.
 
-**AUTH-009 [PROPOSED, P0]** Administrative actions affecting access, billing, and data deletion shall generate audit events.
+**AUTH-009 [CONFIRMED, P0]** Administrative actions affecting access, billing, credit allocation, manual plan provisioning, and deletion produce audit events (Q060).
 
 ### Acceptance criteria
 - A member of organization A cannot access organization B's chatbot, documents, vector chunks, conversations, or traces by modifying IDs or API requests.
@@ -198,7 +198,7 @@ If specification and code disagree, report the discrepancy rather than silently 
 
 **WID-006 [CONFIRMED, P0]** Production usage is restricted to registered exact hostnames and explicitly configured wildcard subdomains; localhost/staging have a separate testing mode. Origin checks alone are not authentication.
 
-**WID-007 [CONFIRMED, P0]** Stream responses using SSE; browser disconnection does not cancel server generation, and completed answers are persisted once and recoverable within the same tab session.
+**WID-007 [CONFIRMED, P0]** Stream answers over SSE independently of server-side generation lifetime; browser disconnect does not cancel generation. Persist completion once to authoritative LangGraph checkpoint state and restore it on same-tab reconnect (Q050, Q054, Q061).
 
 **WID-008 [CONFIRMED, P0]** Anonymous conversations survive same-tab refresh but are not intentionally resumed after tab closure; duplicate-tab and browser-restore details remain OPEN.
 
@@ -230,19 +230,19 @@ If specification and code disagree, report the discrepancy rather than silently 
 
 **DOC-006 [PROPOSED, P0]** Each document shall expose processing state (`pending`, `processing`, `ready`, `failed`, `deleting`) and useful error details without leaking sensitive internals.
 
-**DOC-007 [CONFIRMED, P0]** Documents belong to an organization-wide library and are reusable across knowledge bases without duplicate uploads or embeddings; chunks retain tenant and source metadata.
+**DOC-007 [CONFIRMED, P0]** An organization owns canonical source documents and canonical chunks/embeddings per document and embedding-model version. Knowledge bases reference shared documents/chunks; attaching to another knowledge base does not re-embed (Q012, Q057).
 
-**DOC-008 [CONFIRMED, P0]** Knowledge bases auto-publish successful ingestion for the next chatbot message. Ingestion is atomic except unreadable scanned-PDF pages may be skipped and reported when readable pages exist.
+**DOC-008 [CONFIRMED, P0]** Ingestion atomically publishes a complete canonical document/chunk/embedding version to its attached knowledge bases; unreadable scanned-PDF pages may be skipped/reported when readable pages remain (Q011, Q018, Q021, Q057).
 
-**DOC-009 [CONFIRMED, P0]** Retain failed source uploads and reports for authorized idempotent retries with attempt history. Block exact duplicate uploads within an organization; permit attaching an existing document to additional knowledge bases.
+**DOC-009 [CONFIRMED, P0]** Retain failed source uploads and attempt reports; retry idempotently without re-upload. Block exact duplicate source files per organization and reuse existing canonical embeddings across additional knowledge bases (Q019, Q022, Q023, Q057).
 
-**DOC-010 [CONFIRMED, P0]** Replacement creates a new document; the owner deletes the old one manually. Confirmed deletion detaches all knowledge bases, excludes chunks from retrieval immediately and cleans them asynchronously; historical evidence remains subject to retention.
+**DOC-010 [CONFIRMED, P0]** Replacement creates a new document. Global deletion immediately excludes the old document from every knowledge base and retrieval, then asynchronously cleans up canonical chunks/embeddings; detaching one knowledge-base reference alone must not delete shared embeddings. Historical trace evidence follows retention rules (Q015, Q016, Q024, Q057).
 
 **DOC-011 [CONFIRMED, P0]** Document counts, individual file size, storage and related limits depend on subscription plan; numerical values remain OPEN.
 
 **DOC-012 [CONFIRMED, P1]** Skip and report unreadable scanned-PDF pages without OCR; PDFs with zero readable text cannot publish. Other ingestion sources remain OPEN or DEFERRED.
 
-**DOC-013 [OPEN, P0]** Chunking method, chunk sizes, embedding dimensionality, re-embedding/version migration, and multilingual handling.
+**DOC-013 [OPEN, P0]** Choose chunking method, sizes, embedding model/dimensionality, and multilingual handling before ingestion implementation. Canonical embeddings are shared per document and embedding-model version, with explicit re-embedding/version migration (Q057).
 
 **DOC-014 [PROPOSED, P0]** Uploads shall be checked for permitted type, content/size limits, path safety, and malicious content risks; parsers shall run with constrained resources.
 
@@ -258,7 +258,7 @@ If specification and code disagree, report the discrepancy rather than silently 
 
 **RAG-001 [CONFIRMED, P0]** Retrieval is centrally managed by industry template; general-purpose retrieval combines pgvector similarity and PostgreSQL full-text search using Reciprocal Rank Fusion (RRF).
 
-**RAG-002 [PROPOSED, P0]** Retrieval shall enforce tenant and chatbot authorization filters before evidence is used for generation.
+**RAG-002 [CONFIRMED, P0]** Retrieval enforces organization and authorized chatbot/knowledge-base membership filters before evidence is used; a shared document may be retrieved only through a knowledge base attached to the chatbot (Q056–Q057).
 
 **RAG-003 [CONFIRMED, P0]** Trace original query, ambiguity decision, optional rewrite, branch rankings, fused RRF ranks, filters, evidence snapshots, source versions and effective configuration.
 
@@ -291,25 +291,25 @@ LangGraph checkpointing stores recoverable graph/thread state. It does **not**, 
 
 **MEM-001 [CONFIRMED, P0]** LangGraph shall orchestrate the conversation lifecycle using current, supported architectural patterns.
 
-**MEM-002 [CONFIRMED, P0]** Conversation state shall use durable checkpointing.
+**MEM-002 [CONFIRMED, P0]** Durable LangGraph checkpoint state is the sole authoritative store of conversation history and response state, including complete original messages; model-input summaries and dashboard transcripts are derived representations (Q058, Q061).
 
-**MEM-003 [CONFIRMED, P0]** The LLM shall receive a sliding window of recent conversation messages verbatim, plus a rolling summary of older messages.
+**MEM-003 [CONFIRMED, P0]** The LLM receives recent verbatim user/assistant messages plus a rolling summary of older messages. This bounded model-input context is separate from the complete original history retained in authoritative checkpoint state (Q036, Q061).
 
-**MEM-004 [CONFIRMED, P0]** The configurable verbatim window counts individual user and assistant messages, excluding system/tool messages; displaced messages are incrementally summarized, with summary token limits and compression.
+**MEM-004 [CONFIRMED, P0]** The configured verbatim model-input window counts individual user and assistant messages, excluding system/tool messages. Older messages are summarized and the summary compressed to its token budget, without removing originals from authoritative checkpoint state (Q037, Q041, Q042, Q061).
 
-**MEM-005 [PROPOSED, P0]** A conversation thread shall be bound server-side to its chatbot and tenant; clients may not use arbitrary thread IDs to access other conversations.
+**MEM-005 [CONFIRMED, P0]** Every checkpointed conversation/thread is bound server-side to a chatbot and organization; browser-supplied identifiers never grant access to another tenant’s checkpoint state (Q056, Q058).
 
 **MEM-006 [PROPOSED, P0]** Model context shall be assembled from trusted system rules, rolling summary, recent verbatim messages, retrieved evidence, and the current user request, without unintentionally duplicating the current message.
 
-**MEM-007 [CONFIRMED, P0]** Keep complete original transcripts separately from rolling summaries and LangGraph checkpoint state.
+**MEM-007 [CONFIRMED, P0]** Complete original user and assistant messages remain durably recoverable from authoritative LangGraph checkpoint state for their retention period. Dashboard transcripts are derived from checkpoints; optional query-optimized read projections must be rebuildable and are not independent authorities (Q058, Q061).
 
-**MEM-008 [CONFIRMED, P0]** Merge displaced messages into the previous summary exactly once using a persisted cursor; preserve recent verbatim messages and never advance the cursor after failed summarization.
+**MEM-008 [CONFIRMED, P0]** Synchronous summary updates merge each newly displaced message exactly once using a persisted cursor consistent with checkpoint state; failures cannot advance the cursor. Summarization never overwrites or discards original history (Q037, Q043, Q061).
 
-**MEM-009 [CONFIRMED, P0]** Only one response-generation operation may run per conversation; the widget disables additional sends and the server enforces concurrency protection.
+**MEM-009 [CONFIRMED, P0]** Only one response-generation operation per conversation may run at a time. Server-side serialization and idempotency prevent duplicate generation or checkpointed assistant messages, including on SSE reconnection (Q039, Q054, Q061).
 
-**MEM-010 [CONFIRMED, P0]** Update the rolling summary synchronously in the active conversation request before generating the next answer.
+**MEM-010 [CONFIRMED, P0]** Before each answer generation, synchronously update the rolling summary and its cursor within the authoritative conversation-state transition. Verify checkpoint persistence and crash-recovery semantics before implementation (Q043, Q061).
 
-**MEM-011 [CONFIRMED, P0]** Retain full transcripts and debugging traces for 90 days by default; organizations may configure retention within platform limits. Other data-category retention remains OPEN.
+**MEM-011 [CONFIRMED, P0]** Complete checkpoint-authoritative conversation history and associated debugging traces default to 90-day retention, configurable by organization within platform limits. Derived projections, checkpoint history, backups, and evidence deletion must follow the applicable privacy/retention lifecycle; exact cleanup implementation remains OPEN (Q044, Q058, Q061).
 
 **MEM-012 [PROPOSED, P0]** Graph execution shall be observable by step and correlated to the answer's trace record.
 
@@ -343,9 +343,9 @@ The order of checkpoint commits, synchronous summary updates, trace writes and s
 
 **DBG-001 [CONFIRMED, P0]** The SaaS dashboard shall allow inspection of individual chatbot answers and the context returned by similarity retrieval.
 
-**DBG-002 [PROPOSED, P0]** A trace shall link organization, chatbot, conversation, visitor message, assistant response, and execution identifier.
+**DBG-002 [CONFIRMED, P0]** Answer traces correlate organization, chatbot, checkpointed conversation, original visitor message, checkpointed assistant response, and execution identifier; traces cannot become an independent authority for conversation history (Q058, Q061).
 
-**DBG-003 [CONFIRMED, P0]** Trace original/rewritten queries, branch and fused retrieval ranks, evidence sufficiency, source snapshots, effective configuration, model/provider, retries/failover, latency, errors and usage.
+**DBG-003 [CONFIRMED, P0]** Trace original/rewritten queries, retrieval branch and fused ranks, sufficiency, immutable source evidence snapshots, effective configuration, provider/model, retries/failover, latency, errors, and usage, correlated to checkpointed messages (Q024, Q032–Q034, Q061).
 
 **DBG-004 [PROPOSED, P0]** A trace shall distinguish retrieved candidate chunks from chunks actually passed to the LLM after filtering or truncation.
 
@@ -357,7 +357,7 @@ The order of checkpoint commits, synchronous summary updates, trace writes and s
 
 **DBG-008 [OPEN, P1]** Answer feedback, evaluation datasets, regression tests, analytics dashboards, and automatic quality scoring.
 
-**DBG-009 [CONFIRMED, P0]** Retain traces for 90 days by default with organization-configurable periods within platform limits; source deletion does not erase retained evidence snapshots, subject to privacy deletion.
+**DBG-009 [CONFIRMED, P0]** Traces default to 90-day retention with organization-configurable periods within platform limits. Historical evidence remains after source deletion until expiry or privacy deletion, coordinated with checkpoint-history retention (Q024, Q044, Q061).
 
 ### Acceptance criteria
 - An owner can open an answer and see the exact retrieved evidence used to generate it.
@@ -396,17 +396,17 @@ The order of checkpoint commits, synchronous summary updates, trace writes and s
 
 **BILL-002 [OPEN, P0]** Merchant of Record/payment provider selection, subject to actual onboarding and payout eligibility for an Egypt-based business, supported currencies, restricted markets, fees, tax responsibilities, and payout methods.
 
-**BILL-003 [PROPOSED, P0]** Billing shall be isolated behind a provider adapter, keeping internal subscription/entitlement logic independent of a specific payment API.
+**BILL-003 [CONFIRMED, P0]** Plan entitlements and credit accounting are provider-independent; a payment-provider adapter is introduced before accepting paying customers (Q059–Q060).
 
-**BILL-004 [PROPOSED, P0]** Subscription state shall be synchronized from verified, idempotently processed provider webhooks.
+**BILL-004 [PROPOSED, P0]** Before paid launch, synchronize paid subscriptions from verified, idempotently processed payment-provider webhooks. Core development and manually provisioned test plans do not depend on live payment integration (Q060).
 
-**BILL-005 [CONFIRMED, P0]** Plan limits cover chatbots, documents, individual file size, storage and AI usage; block downgrades until the customer manually reduces usage, without automatic deletion.
+**BILL-005 [CONFIRMED, P0]** Plans govern chatbot/document/file/storage limits and monthly AI credits. Downgrades are blocked until usage fits the destination plan; no automatic deletion. Credit enforcement applies to manually provisioned plans as well (Q020, Q025, Q059–Q060).
 
-**BILL-006 [OPEN, P0]** Pricing model: subscription-only, included usage with overage, prepaid credits, or hybrid; currencies and tax-inclusive display.
+**BILL-006 [CONFIRMED, P0]** Subscription plans include a monthly AI-credit allowance. Exact prices, included credit amounts, overage/prepaid-credit policies, currencies, and tax presentation remain OPEN (Q059).
 
-**BILL-007 [OPEN, P0]** Metering unit: messages, tokens, model cost, or credits; define whether failed requests and retries consume allowance.
+**BILL-007 [CONFIRMED, P0]** AI operations consume credits based on measured model/token usage. Reserve an estimated credit amount before execution and reconcile actual consumption after execution; failed operations, retries, and unused reservations require explicit settlement rules (Q059).
 
-**BILL-008 [PROPOSED, P0]** Quotas shall be checked server-side before expensive model work and updated using concurrency-safe accounting.
+**BILL-008 [CONFIRMED, P0]** Check entitlements and atomically reserve available credits before chargeable AI work; finalize or release reservations with idempotent, concurrency-safe ledger operations. SSE disconnect does not by itself cancel server-side generation (Q054, Q059).
 
 **BILL-009 [OPEN, P0]** Free trial, free tier, cancellation timing, proration, refunds, grace periods, and delinquency behavior.
 
@@ -449,17 +449,17 @@ The order of checkpoint commits, synchronous summary updates, trace writes and s
 | `audit_events` | Sensitive configuration/access changes | PROPOSED |
 | LangGraph checkpoint tables | Durable thread/graph state, framework-owned | CONFIRMED need; schema framework-managed |
 
-**DATA-001 [PROPOSED, P0]** All tenant-owned entities shall carry an enforceable tenant relationship, directly or through a securely validated parent.
+**DATA-001 [CONFIRMED, P0]** Use shared PostgreSQL tables for tenants. Every tenant-owned row has an enforceable organization_id or a securely validated organization-owned parent; queries and constraints must prevent cross-tenant access (Q056).
 
 **DATA-002 [PROPOSED, P0]** Database migrations for ChatHat-owned tables shall be managed through Alembic.
 
-**DATA-003 [PROPOSED, P0]** LangGraph-owned persistence tables shall follow the supported checkpointer's setup and schema-management contract, not be manually recreated as SQLModel entities.
+**DATA-003 [CONFIRMED, P0]** Use supported LangGraph checkpoint persistence as the sole authoritative conversation-history/response-state store. Verify full-state restoration, original-message retention, checkpoint write semantics, replay, and cleanup; do not recreate framework tables as SQLModel entities (Q058, Q061).
 
-**DATA-004 [PROPOSED, P0]** Document/chunk records shall support safe version replacement and cleanup.
+**DATA-004 [CONFIRMED, P0]** Represent canonical document chunks/embeddings per embedding-model version and many-to-many knowledge-base references; publication, detachment, global deletion, and cleanup must be safe for shared embeddings (Q057).
 
-**DATA-005 [PROPOSED, P0]** Usage accounting shall be idempotent and reconcilable to model/provider consumption.
+**DATA-005 [CONFIRMED, P0]** Maintain an idempotent, reconcilable AI-credit ledger for monthly allocation, reservation, measured consumption, release, and adjustment. Billing/credit ledger is not conversation transcript authority (Q059).
 
-**DATA-006 [OPEN, P0]** Shared tables versus database-per-tenant; initial recommendation is shared PostgreSQL with strict scoping.
+**DATA-006 [CONFIRMED, P0]** Initial multi-tenancy uses one shared PostgreSQL database and shared tables, with mandatory organization-scoped application authorization; separate per-tenant schemas/databases are not required (Q056).
 
 **DATA-007 [OPEN, P0]** Vector indexing strategy and filtering/index performance as tenant and document counts grow.
 
@@ -486,7 +486,7 @@ These are conceptual endpoint groups, **not finalized routes**.
 
 **API-002 [PROPOSED, P0]** Public widget endpoints shall expose only public configuration and permitted chat operations.
 
-**API-003 [CONFIRMED, P0]** Define SSE partial/completed/error states and recovery of server-completed responses after browser disconnect without duplicate generation.
+**API-003 [CONFIRMED, P0]** SSE exposes partial/completed/error states. On disconnect generation continues server-side; a completed assistant response is committed once to authoritative checkpoint state and recoverable within the same tab without regeneration (Q050, Q054, Q058, Q061).
 
 **API-004 [PROPOSED, P0]** APIs shall return consistent error codes and validation details without leaking internal stack traces.
 
@@ -512,7 +512,7 @@ These are conceptual endpoint groups, **not finalized routes**.
 
 ## 15. Security, privacy, and compliance
 
-**SEC-001 [PROPOSED, P0]** Apply tenant authorization consistently to relational queries, vector retrieval, checkpoint/thread access, and traces.
+**SEC-001 [CONFIRMED, P0]** Enforce organization-scoped authorization in shared relational tables, canonical vector retrieval, LangGraph checkpoints, and traces; cross-tenant IDs must never bypass checks (Q056).
 
 **SEC-002 [PROPOSED, P0]** Store provider API keys and other credentials server-side using appropriate secret management; never expose them to widget visitors.
 
@@ -524,7 +524,7 @@ These are conceptual endpoint groups, **not finalized routes**.
 
 **SEC-006 [PROPOSED, P0]** Treat retrieved content, document text, and visitor prompts as untrusted with respect to platform instructions and tool permissions.
 
-**SEC-007 [CONFIRMED, P0]** Transcripts and traces default to 90-day retention configurable within platform limits; source deletion removes searchable chunks while preserving historical evidence until expiry or applicable privacy deletion.
+**SEC-007 [CONFIRMED, P0]** Checkpoint-authoritative transcripts and debugging traces default to 90-day retention configurable within platform limits. Coordinate deletion of checkpoint history, derived transcript projections, evidence snapshots, vectors, and backups with privacy obligations (Q044, Q058, Q061).
 
 **SEC-008 [OPEN, P0]** Privacy policy, DPA, data residency, GDPR-related obligations, age restrictions, international transfers, and consent requirements; obtain appropriate legal review.
 
@@ -556,7 +556,7 @@ These are conceptual endpoint groups, **not finalized routes**.
 
 **NFR-009 [PROPOSED, P0]** Provide environment-separated configuration, repeatable migrations, deployment rollback, and production-safe secrets management.
 
-**NFR-010 [PROPOSED, P0]** Define cost telemetry per organization and chatbot, including embeddings, LLM calls, storage, and background processing.
+**NFR-010 [CONFIRMED, P0]** Track model/token usage, credit reservation and settlement, and underlying provider costs per organization and chatbot, including embedding work and provider retries (Q059).
 
 ---
 
@@ -611,7 +611,7 @@ Security, privacy workflows, backups, observability, load testing, deployment au
 
 **ROAD-001 [PROPOSED, P0]** Each phase shall produce a testable increment and update implementation status based on the actual GitHub codebase.
 
-**ROAD-002 [OPEN, P0]** Whether billing must be implemented before public beta access; recommended before accepting paying customers.
+**ROAD-002 [CONFIRMED, P0]** Build/test the core product using authorized manually provisioned plans with working entitlements and credit limits. Integrate live payment processing and verified webhooks before accepting paying customers (Q060).
 
 ---
 
@@ -632,9 +632,9 @@ The following are not confirmed MVP commitments:
 
 ---
 
-## 20. Open-decision register for interactive Q&A
+## 20. Historical provisional question register (superseded)
 
-These questions should be resolved in small batches. Each selected answer must update the corresponding requirement IDs and any dependent acceptance criteria.
+**Historical note:** The following was an initial provisional topic list, not the actual interactive question IDs. It is retained for historical reference only and must not be used to re-open confirmed Q001–Q061 decisions. For current unresolved requirements, inspect OPEN entries in the specification.
 
 | ID | Decision | Primary affected sections | Priority |
 |---|---|---|---|
@@ -703,13 +703,13 @@ This document becomes an approved implementation baseline when:
 5. A minimal launch scope, measurable non-functional targets, and release gates are approved.
 6. The approved version is committed to the GitHub repository by an authorized action.
 
-**Current state:** Product decisions Q001–Q055 reconciled; remaining OPEN items still require decisions. No requirements imply that code, tests or infrastructure have been implemented.
+**Current state:** Product decisions Q001–Q061 reconciled; remaining OPEN items still require decisions. No requirements imply that code, tests or infrastructure have been implemented.
 
 ---
 
 ## 23. Confirmed interactive decisions — Batches 1–11 (Q001–Q055)
 
-This register uses the **interactive Q&A numbering**, which differs from the original provisional question list in section 20. The confirmed choices below supersede contradictory earlier OPEN/PROPOSED wording. Full decision explanations for Q001–Q050 are in `docs/questions_and_answers.md`; Q051–Q055 were confirmed on 2026-11-08 and should be appended to that file separately.
+This register uses the **interactive Q&A numbering**, which differs from the original provisional question list in section 20. The confirmed choices supersede contradictory earlier OPEN/PROPOSED wording. Detailed decisions Q056–Q061 are in `docs/questions_and_answers.md`; Q001–Q055 are consolidated below.
 
 ### Batch 1 — Product identity and accounts
 - **Q001:** General-purpose platform with selectable industry templates.
@@ -795,7 +795,7 @@ This register uses the **interactive Q&A numbering**, which differs from the ori
 - Separate chatbot Draft/Publish from knowledge-base auto-publication.
 - Persist ingestion attempts, source-file digests, failure reports and publication state; enforce retrieval exclusion before deletion cleanup.
 - Persist immutable answer evidence and effective configuration version, subject to privacy and retention policies.
-- Keep full transcripts separate from compacted LangGraph memory, with a persisted summary cursor and serialized state updates.
+- Keep full original message history authoritative in LangGraph checkpoint state; model-input summaries and dashboard transcripts are derived, with a persisted summary cursor and serialized state updates.
 - Model availability as automatic / forced online / forced offline rather than one boolean.
 - Persist generation independently of SSE transport and deduplicate reconnection/replay.
 - Enforce domain checks, authorization and layered abuse limits server-side.
@@ -804,8 +804,8 @@ This register uses the **interactive Q&A numbering**, which differs from the ori
 
 - Initial supported language catalog and locale fallback.
 - Industry-specific retrieval pipelines, RRF parameters, ambiguity detection and evidence thresholds.
-- Model/embedding providers, fallback compatibility, timeout budgets and failed-request billing.
-- Summary token limits, tool-message context handling, checkpoint consistency and recovery.
+- Model/embedding providers, fallback compatibility, timeout budgets and exact credit settlement for failed/retried operations.
+- Summary token limits, tool-message context handling, checkpoint performance, transaction boundaries and crash recovery; full original history must remain recoverable.
 - Retention range, cleanup schedule, backup deletion and privacy/legal obligations.
 - Contact form fields, storage, delivery, consent and spam protection.
 - Wildcard syntax, test-mode restrictions, iframe postMessage/CSP contracts.
@@ -819,3 +819,56 @@ This register uses the **interactive Q&A numbering**, which differs from the ori
 | Date | Version | Change |
 |---|---|---|
 | 2026-11-08 | 0.2.0 | Reconciled confirmed interactive decisions Q001–Q055 across requirement definitions, memory lifecycle, deferred features and decision register. |
+| 2026-11-08 | 0.3.0 | Incorporated Q056–Q061: shared-table tenancy, canonical embeddings, checkpoint-authoritative full history, monthly AI credits, manual test plans and paid-launch payment gate. |
+
+---
+
+## 24. Confirmed architectural decisions — Batch 12 and Q061 (Q056–Q061)
+
+These choices are confirmed product-owner decisions, not proof of implementation. Full decision rationale is in `docs/questions_and_answers.md`.
+
+### Q056 — Shared-table tenant isolation
+
+One shared PostgreSQL database with shared tables. Every organization-owned resource must be scoped and authorized by its organization; client-provided tenant IDs are untrusted. This includes relational reads/writes, canonical embeddings, LangGraph checkpoints, traces, and credit accounting. Application-level authorization is mandatory; PostgreSQL RLS remains optional defense in depth.
+
+### Q057 — Canonical document embeddings
+
+Generate one canonical chunk/embedding representation per document and embedding-model version. Knowledge bases refer to shared document chunks, and chatbots retrieve only through their attached knowledge bases. Reuse does not duplicate embeddings. Global deletion removes retrieval eligibility across all knowledge bases before asynchronous physical cleanup; detachment from one knowledge base does not delete embeddings needed elsewhere.
+
+### Q058 — LangGraph checkpoints as sole conversation authority
+
+Durable LangGraph checkpoint state is the sole authority for conversation history and response state. Dashboard transcripts and model-input context are derived, not independently authoritative. This does **not** make checkpoints authoritative for unrelated domain data such as credit balances, billing records, uploaded documents, or platform audit events.
+
+### Q059 — Monthly AI credits
+
+Plans allocate monthly AI credits. Chargeable operations reserve available credits before execution, then settle measured model/token usage with an idempotent ledger. Unused reservations are released. Exact conversion rates, allowances, overage policy, and retry/failure settlement are still OPEN; do not invent them. The ledger is an authoritative financial/entitlement record, separate from conversation history.
+
+### Q060 — Manual plans during core development
+
+Build and test with securely administered manually provisioned plans. Entitlement checks and credit accounting must work without a payment provider. Select and integrate a live payment provider, checkout and verified webhooks before accepting paying customers. The provider selection itself is deferred until that phase.
+
+### Q061 — Full original messages retained in checkpoint state
+
+**Clarification of Q058:** Keep complete original user/assistant message history durably recoverable from LangGraph checkpoint state for the applicable retention period. Construct a bounded rolling summary plus recent verbatim window solely for LLM input. Summarization must never overwrite or delete original history. Dashboard transcripts are derived from checkpoints; optional read projections are rebuildable and never independent authorities.
+
+The persisted summary cursor must identify exactly which original messages were summarized. Before generating a new answer, update summary/cursor consistently. One active operation per conversation, idempotent completion, and checkpoint recovery are required. SSE disconnect does not stop server-side generation; the completed response is checkpointed once and recoverable within the same tab session.
+
+**Engineering verification required before conversation implementation:** Confirm the selected LangGraph checkpointer supports complete original-history persistence/reconstruction and the required retention/deletion behavior. Measure long-conversation checkpoint growth, serialization cost, crash recovery, and read-projection rebuild performance. External provider calls, SSE delivery, and credit-ledger transactions must not be assumed atomic with checkpoint writes.
+
+### Acceptance criteria for Q056–Q061
+
+1. Forged organization, knowledge-base, document, or checkpoint identifiers cannot reveal another tenant's data.
+2. Attaching the same document to another knowledge base does not regenerate identical embeddings; retrieval membership remains enforced.
+3. A long conversation can produce a complete verbatim transcript from checkpoint state after summaries have been compressed multiple times.
+4. Repeating a request or reconnecting after SSE disconnection does not create duplicate assistant messages or duplicate charges.
+5. Concurrent credit reservations cannot exceed the organization's available credit balance; final charges reconcile measured usage.
+6. An authorized operator can provision a test plan without live payments, while ordinary organization users cannot grant themselves credits.
+7. Paid customers cannot be onboarded until payment-provider integration and verified webhook processing are ready.
+
+### Remaining high-impact implementation contracts (not new product decisions)
+
+- Verify checkpoint durability, full-history reconstruction, storage growth, idempotent response completion, and cleanup before building conversation persistence.
+- Design credit reservation/settlement/release with concurrency control, accounting for provider retries and interrupted streams.
+- Define database constraints and tenant-scoping patterns before writing tenant-owned models.
+- Choose embedding model and version migration strategy when implementing ingestion.
+- Choose live payment provider before the first paid launch, not before initial core development.
