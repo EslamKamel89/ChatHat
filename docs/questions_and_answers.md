@@ -1302,3 +1302,118 @@ With a verbatim window of 3 messages:
 8. Whether widget configuration is cached and how published updates invalidate it.
 
 **Next batch:** Q051–Q055.
+
+## Batch 11 — Widget Security, Availability, and Streaming Lifecycle
+
+**Date:** 2026-11-08
+**Status:** Completed
+**Questions:** Q051–Q055
+**Specification:** `docs/chathat-spec.md`
+
+### Q051 — Production domain matching
+
+**Question:** How should registered production domains be matched against websites embedding a chatbot?
+
+**Answer:** B — Allow exact hostnames and explicitly configured wildcard subdomains.
+
+**Decision implications:**
+
+- Production domain authorization supports exact hostnames.
+- Explicit wildcard rules may authorize subdomains.
+- Registering a root domain does not automatically authorize every subdomain.
+- Domain patterns must be validated and normalized.
+- The backend must enforce configured domain rules.
+- Wildcard matching must respect hostname boundaries.
+- Rules for ports, schemes, public suffixes, and internationalized domains remain to be specified.
+
+### Q052 — Widget isolation from host websites
+
+**Question:** How should the embedded widget avoid CSS conflicts and JavaScript interference from the customer's website?
+
+**Answer:** B — Render the widget inside a cross-origin iframe, controlled by a lightweight JavaScript loader.
+
+**Decision implications:**
+
+- The installation snippet loads a lightweight JavaScript bootstrap.
+- The chatbot interface runs inside a cross-origin iframe.
+- Floating and inline installations share the same isolation architecture.
+- Host-page styles must not directly affect iframe contents.
+- Host-page communication must use a validated cross-origin messaging contract.
+- Iframe permissions, sandbox settings, and Content Security Policy compatibility remain to be specified.
+
+### Q053 — Business-hours and manual override
+
+**Question:** What should happen when a chatbot's manual availability setting conflicts with its business-hours schedule?
+
+**Answer:** B — Manual enable and disable both override the schedule until the owner removes the override.
+
+**Decision implications:**
+
+- Availability supports three logical manual states: automatic, forced online, and forced offline.
+- Automatic mode follows the configured business-hours schedule.
+- Forced online bypasses the schedule until explicitly removed.
+- Forced offline bypasses the schedule until explicitly removed.
+- The backend must enforce effective availability.
+- Time zones, holiday calendars, and active-stream behavior remain to be specified.
+
+### Q054 — Streaming interruption behavior
+
+**Question:** If a visitor loses connection while an answer is streaming, how should ChatHat handle the generation?
+
+**Answer:** A — Continue generation on the server, save the completed answer, and show it if the visitor reconnects within the same tab session.
+
+**Decision implications:**
+
+- Browser disconnection does not automatically cancel generation.
+- Generation continues server-side after a stream interruption.
+- The completed answer is persisted once.
+- Reconnection within the same tab session retrieves the completed answer.
+- Reconnection must not start duplicate generation.
+- The system must distinguish generation state from transport connection state.
+- Generation deadlines, reconnection authentication, and cleanup policies remain undecided.
+
+### Q055 — Widget abuse protection
+
+**Question:** Which protection strategy should ChatHat use to prevent excessive or automated chatbot usage?
+
+**Answer:** B — Apply layered limits by IP address, visitor session, chatbot, and organization, with optional challenge mechanisms.
+
+**Decision implications:**
+
+- Enforce layered rate limits across IP address, visitor session, chatbot, and organization.
+- Rate limits complement subscription quotas rather than replace them.
+- Optional challenge mechanisms may be triggered for suspicious usage.
+- Limit checks must be enforced server-side.
+- Distributed deployments require consistent shared rate-limit state.
+- Exact thresholds, challenge provider, and response behavior remain undecided.
+
+---
+
+## Batch 11 — Decision Summary
+
+| ID   | Topic               | Decision                                                     |
+| ---- | ------------------- | ------------------------------------------------------------ |
+| Q051 | Domain matching     | Exact hostnames and explicit wildcard subdomains             |
+| Q052 | Widget isolation    | Cross-origin iframe and lightweight JavaScript loader        |
+| Q053 | Manual override     | Forced online/offline overrides schedule until removed       |
+| Q054 | Stream interruption | Continue generation, persist answer, restore within same tab |
+| Q055 | Abuse protection    | Layered rate limits with optional challenges                 |
+
+## Cross-Batch Reconciliation
+
+- Q051 specifies the production-domain rules introduced by Q046.
+- Q052 establishes the isolation mechanism for the floating and inline installations selected in Q048.
+- Q053 resolves the manual-override precedence left open by Q049.
+- Q054 defines disconnection behavior for the SSE streaming selected in Q050.
+- Q054 must preserve the single-active-response invariant established by Q039.
+- Q055 strengthens the public-widget protection required by Q046.
+
+## Outstanding Clarifications
+
+1. Exact wildcard-domain validation and origin matching.
+2. Iframe permissions, CSP requirements, and postMessage contracts.
+3. Availability schedules, time zones, holidays, and overnight periods.
+4. Stream execution deadlines and server-side continuation mechanism.
+5. Reconnection identity and response-recovery endpoint.
+6. Rate-limit thresholds, challenge triggers, and distributed state.
+7. Billing treatment of completed responses that were never viewed.
