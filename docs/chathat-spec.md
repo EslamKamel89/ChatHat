@@ -9,11 +9,13 @@
 ## 0. Specification governance
 
 ### 0.1 Purpose
+
 ChatHat is a multi-tenant, globally marketed SaaS that allows businesses to deploy an AI chatbot on an existing website by inserting a small script tag. Businesses upload knowledge files, configure chatbot behavior and rules, inspect conversations and retrieved evidence, and manage subscriptions. The system uses a retrieval-augmented generation (RAG) architecture and LangGraph for stateful AI orchestration.
 
 ChatHat is also an intentionally educational production-grade project for practicing FastAPI and related technologies. Technical depth should not create unnecessary product complexity.
 
 ### 0.2 Requirement statuses
+
 - **CONFIRMED:** Explicitly requested by the product owner.
 - **PROPOSED:** Recommended working assumption; requires approval.
 - **OPEN:** Unresolved decision; do not treat any option as final.
@@ -22,6 +24,7 @@ ChatHat is also an intentionally educational production-grade project for practi
 A requirement's status describes **decision certainty**, not implementation progress. Track implementation independently as `not started`, `in progress`, `implemented`, `verified`, or `blocked` when work begins.
 
 ### 0.3 Change procedure
+
 1. Every interactive Q&A batch records question IDs, options, selected answers, rationale, and consequences.
 2. Update only affected requirements, acceptance criteria, data contracts, and dependencies.
 3. Keep stable requirement IDs; mark superseded requirements rather than silently deleting their history.
@@ -30,11 +33,13 @@ A requirement's status describes **decision certainty**, not implementation prog
 6. Never infer code implementation from this specification. Inspect the latest GitHub repository state before code-level recommendations.
 
 ### 0.4 Priority definitions
+
 - **P0:** Required for a secure, sellable core product.
 - **P1:** Important enhancement; can follow the initial release.
 - **P2:** Optional or future capability.
 
 ### 0.5 Sources of truth
+
 - **GitHub repository:** Current source code, migrations, configuration, tests, and implementation reality.
 - **SPEC.md:** Agreed product behavior, constraints, and acceptance criteria.
 - **Future architecture decision records (ADRs):** Decisions and trade-offs that cannot be expressed as requirements alone.
@@ -67,6 +72,7 @@ If specification and code disagree, report the discrepancy rather than silently 
 **PRD-010 [CONFIRMED, P0]** Dashboard and chatbot support full localization in customer-selected supported languages, including RTL; initial language list remains OPEN.
 
 ### 1.1 Users and roles
+
 - **Platform operator:** Operates ChatHat, reviews aggregate service health, handles billing incidents and abuse, and administers platform settings.
 - **Organization owner:** Manages subscription, organization membership, and chatbot ownership.
 - **Organization member:** Manages permitted chatbot configuration, knowledge, and conversations.
@@ -81,6 +87,7 @@ If specification and code disagree, report the discrepancy rather than silently 
 **USR-004 [CONFIRMED, P1]** Each registered dashboard user belongs to exactly one organization.
 
 ### 1.2 Core user journeys
+
 1. Owner registers, creates an organization, and chooses a plan or trial.
 2. Owner creates a chatbot, sets its identity, rules, and permitted website domains.
 3. Owner uploads knowledge documents and observes ingestion progress.
@@ -122,6 +129,7 @@ If specification and code disagree, report the discrepancy rather than silently 
 **TECH-013 [OPEN, P0]** Hosting provider, deployment topology, secrets management, and infrastructure budget.
 
 ### 2.1 Engineering principles
+
 - Preserve explicit boundaries between HTTP/API, business services, persistence, AI orchestration, background tasks, and third-party providers.
 - Prefer small, testable modules over premature microservices.
 - Use LangGraph for checkpointing, graph execution, and applicable memory tools; custom code is justified for product-specific contracts, audit records, tenant isolation, and retrieval diagnostics.
@@ -151,6 +159,7 @@ If specification and code disagree, report the discrepancy rather than silently 
 **AUTH-009 [CONFIRMED, P0]** Administrative actions affecting access, billing, credit allocation, manual plan provisioning, and deletion produce audit events (Q060).
 
 ### Acceptance criteria
+
 - A member of organization A cannot access organization B's chatbot, documents, vector chunks, conversations, or traces by modifying IDs or API requests.
 - Unauthenticated dashboard requests cannot read protected data.
 - A public widget token/identifier cannot be used to call privileged management endpoints.
@@ -178,6 +187,7 @@ If specification and code disagree, report the discrepancy rather than silently 
 **BOT-009 [PROPOSED, P0]** Rules shall distinguish mandatory safety/operational policies from editable business guidance; tenant instructions cannot override platform-enforced isolation and security controls.
 
 ### Acceptance criteria
+
 - A newly created chatbot can be configured and tested without installation.
 - Disabling a chatbot prevents new public conversations according to the agreed policy.
 - A visitor cannot change the chatbot's rules through a crafted message or request.
@@ -209,6 +219,7 @@ If specification and code disagree, report the discrepancy rather than silently 
 **WID-011 [OPEN, P0]** Host-page CSP compatibility, cookie/storage policy, cross-origin messaging protocol, and installation verification.
 
 ### Acceptance criteria
+
 - Adding the snippet to a basic third-party page displays the widget without changing the host page's styling.
 - A visitor can open, close, and use the widget on desktop and mobile.
 - Exposed public IDs do not grant dashboard privileges.
@@ -247,6 +258,7 @@ If specification and code disagree, report the discrepancy rather than silently 
 **DOC-014 [PROPOSED, P0]** Uploads shall be checked for permitted type, content/size limits, path safety, and malicious content risks; parsers shall run with constrained resources.
 
 ### Acceptance criteria
+
 - A valid file progresses from uploaded to ready, and its chunks are retrievable only for authorized chatbots.
 - An invalid or unsupported file fails clearly without leaving partially published knowledge.
 - A failed Celery task can be retried without duplicate searchable chunks.
@@ -277,6 +289,7 @@ If specification and code disagree, report the discrepancy rather than silently 
 **RAG-010 [CONFIRMED, P0]** ChatHat centrally selects and manages generation models/providers; customers cannot select models or supply provider API keys.
 
 ### Acceptance criteria
+
 - A chatbot cannot retrieve another organization's chunks even if a visitor requests them explicitly.
 - An answer trace identifies exactly which retrieved chunks were supplied to generation.
 - Empty retrieval has a defined and testable behavior.
@@ -287,6 +300,7 @@ If specification and code disagree, report the discrepancy rather than silently 
 ## 8. LangGraph orchestration and conversation memory
 
 ### 8.1 Architectural distinction
+
 LangGraph checkpointing stores recoverable graph/thread state. It does **not**, by itself, guarantee that a bounded verbatim window and rolling summary are the exact messages sent to the LLM. ChatHat must explicitly construct and test the model-input context. Framework-supported summarization or trimming components should be preferred where compatible with the selected graph architecture.
 
 **MEM-001 [CONFIRMED, P0]** LangGraph shall orchestrate the conversation lifecycle using current, supported architectural patterns.
@@ -318,6 +332,7 @@ LangGraph checkpointing stores recoverable graph/thread state. It does **not**, 
 **MEM-014 [PROPOSED, P0]** Prefer a minimal, deterministic graph for retrieval and response generation; autonomous tool use shall be introduced only for approved product needs.
 
 ### 8.2 Logical message lifecycle
+
 1. Authenticate/validate public chatbot and resolve authorized visitor conversation.
 2. Restore thread state through the checkpointer.
 3. Select the recent user/assistant verbatim window and synchronously merge displaced messages into the rolling summary; persist its cursor consistently.
@@ -330,6 +345,7 @@ LangGraph checkpointing stores recoverable graph/thread state. It does **not**, 
 The order of checkpoint commits, synchronous summary updates, trace writes and streaming-response persistence requires an explicit failure/recovery design before implementation.
 
 ### Acceptance criteria
+
 - A restarted API process can continue a persisted conversation.
 - Model input contains the intended recent messages exactly, with no missing, reordered, or duplicated turns.
 - Older history is represented through a rolling summary once the threshold is exceeded.
@@ -360,6 +376,7 @@ The order of checkpoint commits, synchronous summary updates, trace writes and s
 **DBG-009 [CONFIRMED, P0]** Traces default to 90-day retention with organization-configurable periods within platform limits. Historical evidence remains after source deletion until expiry or privacy deletion, coordinated with checkpoint-history retention (Q024, Q044, Q061).
 
 ### Acceptance criteria
+
 - An owner can open an answer and see the exact retrieved evidence used to generate it.
 - A trace makes it possible to distinguish retrieval failure, context assembly failure, and generation failure.
 - Users cannot inspect another tenant's traces.
@@ -384,6 +401,7 @@ The order of checkpoint commits, synchronous summary updates, trace writes and s
 **JOB-007 [PROPOSED, P0]** Tasks shall not rely on request-scoped database sessions or in-memory API state.
 
 ### Acceptance criteria
+
 - Restarting a worker does not corrupt already published document data.
 - Duplicate delivery does not create duplicate chunks or charge usage twice.
 - Job failures are visible and actionable in the dashboard.
@@ -417,6 +435,7 @@ The order of checkpoint commits, synchronous summary updates, trace writes and s
 **BILL-012 [OPEN, P0]** Regional restrictions, legal business entity, customer invoicing requirements, and customer support obligations.
 
 ### Acceptance criteria
+
 - A successful payment activates the appropriate plan only after trusted payment confirmation.
 - Replaying a webhook cannot create duplicate subscriptions or double-apply credits.
 - A customer cannot exceed an enforced quota through simultaneous requests.
@@ -426,27 +445,27 @@ The order of checkpoint commits, synchronous summary updates, trace writes and s
 
 ## 12. Data model — conceptual, not finalized SQL schema
 
-| Entity | Key responsibilities | Decision status |
-|---|---|---|
-| `organizations` | Tenant identity, settings, lifecycle | PROPOSED |
-| `users` | Dashboard identities | PROPOSED |
-| `memberships` | User-to-organization roles | PROPOSED |
-| `chatbots` | Public chatbot identity and configuration | PROPOSED |
-| `chatbot_domains` | Allowed host origins/domains | PROPOSED |
-| `documents` | Source file metadata and ownership | PROPOSED |
-| `document_versions` | Revisions and publication status | PROPOSED |
-| `document_chunks` | Chunk text, metadata, vectors | PROPOSED |
-| `ingestion_jobs` | Background progress and errors | PROPOSED |
-| `visitor_sessions` | Anonymous/session identity | OPEN |
-| `conversations` | Tenant/chatbot/thread binding | PROPOSED |
-| `conversation_messages` | Verbatim transcript archive | PROPOSED |
-| `answer_traces` | Execution and model metadata | PROPOSED |
-| `retrieval_trace_chunks` | Ranked retrieved evidence snapshots | PROPOSED |
-| `plans` | Plan definitions and limits | PROPOSED |
-| `subscriptions` | Provider-linked subscription state | PROPOSED |
-| `usage_events` | Idempotent metering ledger | PROPOSED |
-| `billing_webhook_events` | Deduplicated provider event processing | PROPOSED |
-| `audit_events` | Sensitive configuration/access changes | PROPOSED |
+| Entity                      | Key responsibilities                        | Decision status                          |
+| --------------------------- | ------------------------------------------- | ---------------------------------------- |
+| `organizations`             | Tenant identity, settings, lifecycle        | PROPOSED                                 |
+| `users`                     | Dashboard identities                        | PROPOSED                                 |
+| `memberships`               | User-to-organization roles                  | PROPOSED                                 |
+| `chatbots`                  | Public chatbot identity and configuration   | PROPOSED                                 |
+| `chatbot_domains`           | Allowed host origins/domains                | PROPOSED                                 |
+| `documents`                 | Source file metadata and ownership          | PROPOSED                                 |
+| `document_versions`         | Revisions and publication status            | PROPOSED                                 |
+| `document_chunks`           | Chunk text, metadata, vectors               | PROPOSED                                 |
+| `ingestion_jobs`            | Background progress and errors              | PROPOSED                                 |
+| `visitor_sessions`          | Anonymous/session identity                  | OPEN                                     |
+| `conversations`             | Tenant/chatbot/thread binding               | PROPOSED                                 |
+| `conversation_messages`     | Verbatim transcript archive                 | PROPOSED                                 |
+| `answer_traces`             | Execution and model metadata                | PROPOSED                                 |
+| `retrieval_trace_chunks`    | Ranked retrieved evidence snapshots         | PROPOSED                                 |
+| `plans`                     | Plan definitions and limits                 | PROPOSED                                 |
+| `subscriptions`             | Provider-linked subscription state          | PROPOSED                                 |
+| `usage_events`              | Idempotent metering ledger                  | PROPOSED                                 |
+| `billing_webhook_events`    | Deduplicated provider event processing      | PROPOSED                                 |
+| `audit_events`              | Sensitive configuration/access changes      | PROPOSED                                 |
 | LangGraph checkpoint tables | Durable thread/graph state, framework-owned | CONFIRMED need; schema framework-managed |
 
 **DATA-001 [CONFIRMED, P0]** Use shared PostgreSQL tables for tenants. Every tenant-owned row has an enforceable organization_id or a securely validated organization-owned parent; queries and constraints must prevent cross-tenant access (Q056).
@@ -469,18 +488,18 @@ The order of checkpoint commits, synchronous summary updates, trace writes and s
 
 These are conceptual endpoint groups, **not finalized routes**.
 
-| Interface | Responsibilities |
-|---|---|
-| Auth/session | Sign in, sign out, verification, account recovery |
-| Organization | Organization profile, members, permissions |
-| Chatbot management | CRUD, configuration, preview, publish/disable |
-| Knowledge | Upload, list, replace, delete, ingestion status |
-| Public widget | Bootstrap/config, visitor session, chat streaming |
-| Conversations | List, view messages, search/filter |
-| Answer inspection | Trace metadata, retrieved evidence, model context |
-| Billing | Checkout/session, plan changes, subscription status |
-| Provider webhooks | Verified, idempotent payment event intake |
-| Operations | Health, readiness, monitoring, administrative tools |
+| Interface          | Responsibilities                                    |
+| ------------------ | --------------------------------------------------- |
+| Auth/session       | Sign in, sign out, verification, account recovery   |
+| Organization       | Organization profile, members, permissions          |
+| Chatbot management | CRUD, configuration, preview, publish/disable       |
+| Knowledge          | Upload, list, replace, delete, ingestion status     |
+| Public widget      | Bootstrap/config, visitor session, chat streaming   |
+| Conversations      | List, view messages, search/filter                  |
+| Answer inspection  | Trace metadata, retrieved evidence, model context   |
+| Billing            | Checkout/session, plan changes, subscription status |
+| Provider webhooks  | Verified, idempotent payment event intake           |
+| Operations         | Health, readiness, monitoring, administrative tools |
 
 **API-001 [PROPOSED, P0]** Dashboard endpoints shall enforce authenticated tenant authorization.
 
@@ -579,6 +598,7 @@ These are conceptual endpoint groups, **not finalized routes**.
 **QA-008 [OPEN, P0]** Release thresholds for retrieval relevance, groundedness, error rates, latency, and budget adherence.
 
 ### MVP release gate
+
 The MVP is not ready for paid production use until tenant isolation, payment verification, quota enforcement, data deletion, checkpoint recovery, background-job reliability, and public-widget abuse protection have passing tests and operational procedures.
 
 ---
@@ -586,27 +606,35 @@ The MVP is not ready for paid production use until tenant isolation, payment ver
 ## 18. Suggested implementation phases (provisional)
 
 ### Phase 1 — Application foundation
+
 FastAPI application structure, environment configuration, SQLModel, Alembic, PostgreSQL, organization/auth skeleton, dashboard layout, and testing foundation.
 
 ### Phase 2 — Chatbot management
+
 Organization-scoped chatbot CRUD, business rules, domain settings, preview, and authorization.
 
 ### Phase 3 — Knowledge ingestion
+
 Object storage, uploads, Celery/Redis, extraction, chunking, embeddings, pgvector, versioning, and progress UI.
 
 ### Phase 4 — RAG execution
+
 Tenant-filtered retrieval, LangGraph orchestration, model provider abstraction, grounded responses, and evaluation fixtures.
 
 ### Phase 5 — Conversation continuity and inspection
+
 PostgreSQL checkpointer, rolling summaries, verbatim sliding window, transcript archive, trace snapshots, and debugging dashboard.
 
 ### Phase 6 — Website widget
+
 Versioned bootstrap script, iframe UI, public chat API, streaming, session management, domain policy, and abuse controls.
 
 ### Phase 7 — Billing and entitlements
+
 Payment-provider selection and verification, plans, metering, checkout, webhooks, quotas, and lifecycle handling.
 
 ### Phase 8 — Production hardening
+
 Security, privacy workflows, backups, observability, load testing, deployment automation, and controlled launch.
 
 **ROAD-001 [PROPOSED, P0]** Each phase shall produce a testable increment and update implementation status based on the actual GitHub codebase.
@@ -636,35 +664,36 @@ The following are not confirmed MVP commitments:
 
 **Historical note:** The following was an initial provisional topic list, not the actual interactive question IDs. It is retained for historical reference only and must not be used to re-open confirmed Q001–Q061 decisions. For current unresolved requirements, inspect OPEN entries in the specification.
 
-| ID | Decision | Primary affected sections | Priority |
-|---|---|---|---|
-| Q001 | Initial customer segment and primary use case | 1, 4, 7 | P0 |
-| Q002 | Languages and internationalization/RTL | 1, 5, 14 | P0 |
-| Q003 | Account registration and authentication methods | 3 | P0 |
-| Q004 | Organization membership and role permissions | 3 | P0 |
-| Q005 | Number of chatbots and knowledge-sharing model | 4, 6 | P0 |
-| Q006 | Rules configuration and publication behavior | 4 | P0 |
-| Q007 | Widget session identity and persistence | 5, 8 | P0 |
-| Q008 | Supported upload types, sizes, and quotas | 6 | P0 |
-| Q009 | Chunking, embeddings, and multilingual retrieval | 6, 7 | P0 |
-| Q010 | Retrieval strategy and insufficient-evidence behavior | 7 | P0 |
-| Q011 | LLM provider and customer-owned API keys | 2, 7, 11 | P0 |
-| Q012 | Verbatim window and summary token thresholds | 8 | P0 |
-| Q013 | Summary timing, concurrency, and failure recovery | 8 | P0 |
-| Q014 | Transcript and trace retention/redaction | 8, 9, 15 | P0 |
-| Q015 | Trace inspection granularity and access roles | 9 | P0 |
-| Q016 | Celery queue/retry and job-state policies | 10 | P0 |
-| Q017 | Billing provider and Egypt-based payout eligibility | 11 | P0 |
-| Q018 | Plans, metering units, quotas, and overage | 11 | P0 |
-| Q019 | Trial, cancellation, failed payments, and refunds | 11 | P0 |
-| Q020 | Tenant database isolation strategy | 3, 12 | P0 |
-| Q021 | Hosting, deployment, and budget | 2, 16 | P0 |
-| Q022 | Privacy, data residency, and deletion | 15, 16 | P0 |
-| Q023 | Performance, availability, and release targets | 16, 17 | P0 |
-| Q024 | MVP versus deferred feature boundary | 18, 19 | P0 |
-| Q025 | Dashboard/widget branding and UX requirements | 5, 14 | P1 |
+| ID   | Decision                                              | Primary affected sections | Priority |
+| ---- | ----------------------------------------------------- | ------------------------- | -------- |
+| Q001 | Initial customer segment and primary use case         | 1, 4, 7                   | P0       |
+| Q002 | Languages and internationalization/RTL                | 1, 5, 14                  | P0       |
+| Q003 | Account registration and authentication methods       | 3                         | P0       |
+| Q004 | Organization membership and role permissions          | 3                         | P0       |
+| Q005 | Number of chatbots and knowledge-sharing model        | 4, 6                      | P0       |
+| Q006 | Rules configuration and publication behavior          | 4                         | P0       |
+| Q007 | Widget session identity and persistence               | 5, 8                      | P0       |
+| Q008 | Supported upload types, sizes, and quotas             | 6                         | P0       |
+| Q009 | Chunking, embeddings, and multilingual retrieval      | 6, 7                      | P0       |
+| Q010 | Retrieval strategy and insufficient-evidence behavior | 7                         | P0       |
+| Q011 | LLM provider and customer-owned API keys              | 2, 7, 11                  | P0       |
+| Q012 | Verbatim window and summary token thresholds          | 8                         | P0       |
+| Q013 | Summary timing, concurrency, and failure recovery     | 8                         | P0       |
+| Q014 | Transcript and trace retention/redaction              | 8, 9, 15                  | P0       |
+| Q015 | Trace inspection granularity and access roles         | 9                         | P0       |
+| Q016 | Celery queue/retry and job-state policies             | 10                        | P0       |
+| Q017 | Billing provider and Egypt-based payout eligibility   | 11                        | P0       |
+| Q018 | Plans, metering units, quotas, and overage            | 11                        | P0       |
+| Q019 | Trial, cancellation, failed payments, and refunds     | 11                        | P0       |
+| Q020 | Tenant database isolation strategy                    | 3, 12                     | P0       |
+| Q021 | Hosting, deployment, and budget                       | 2, 16                     | P0       |
+| Q022 | Privacy, data residency, and deletion                 | 15, 16                    | P0       |
+| Q023 | Performance, availability, and release targets        | 16, 17                    | P0       |
+| Q024 | MVP versus deferred feature boundary                  | 18, 19                    | P0       |
+| Q025 | Dashboard/widget branding and UX requirements         | 5, 14                     | P1       |
 
 ### Interactive Q&A protocol
+
 1. Present 3–5 decisions per batch with concise trade-offs and a recommended default.
 2. Include an **Other** option with a free-text field for every question.
 3. Wait for the product owner's selections; do not convert defaults into confirmed decisions automatically.
@@ -676,19 +705,19 @@ The following are not confirmed MVP commitments:
 
 ## 21. Decision log
 
-| Date | Decision | Status | Notes |
-|---|---|---|---|
-| 2026-11-08 | Product name is **ChatHat** | CONFIRMED | Repository: `EslamKamel89/ChatHat` |
-| 2026-11-08 | GitHub repository is the codebase SSOT | CONFIRMED | Inspect latest code before implementation guidance |
-| 2026-11-08 | FastAPI, SQLModel, Alembic, PostgreSQL, pgvector | CONFIRMED | Backend and persistence stack |
-| 2026-11-08 | Jinja2, HTMX, Alpine.js, Tailwind CSS, daisyUI | CONFIRMED | Dashboard UI stack |
-| 2026-11-08 | LangGraph and durable checkpointing | CONFIRMED | Prefer supported framework features |
-| 2026-11-08 | Recent verbatim messages plus rolling older summary | CONFIRMED | Exact thresholds remain OPEN |
-| 2026-11-08 | Celery for background work | CONFIRMED | Broker selection remains proposed |
-| 2026-11-08 | Embedded website chatbot via script tag | CONFIRMED | Widget implementation details proposed/open |
-| 2026-11-08 | Document upload and configurable business rules | CONFIRMED | Detailed policies open |
-| 2026-11-08 | Inspect retrieved context for each answer | CONFIRMED | Trace schema proposed |
-| 2026-11-08 | International SaaS billing | CONFIRMED | Provider and pricing OPEN |
+| Date       | Decision                                            | Status    | Notes                                              |
+| ---------- | --------------------------------------------------- | --------- | -------------------------------------------------- |
+| 2026-11-08 | Product name is **ChatHat**                         | CONFIRMED | Repository: `EslamKamel89/ChatHat`                 |
+| 2026-11-08 | GitHub repository is the codebase SSOT              | CONFIRMED | Inspect latest code before implementation guidance |
+| 2026-11-08 | FastAPI, SQLModel, Alembic, PostgreSQL, pgvector    | CONFIRMED | Backend and persistence stack                      |
+| 2026-11-08 | Jinja2, HTMX, Alpine.js, Tailwind CSS, daisyUI      | CONFIRMED | Dashboard UI stack                                 |
+| 2026-11-08 | LangGraph and durable checkpointing                 | CONFIRMED | Prefer supported framework features                |
+| 2026-11-08 | Recent verbatim messages plus rolling older summary | CONFIRMED | Exact thresholds remain OPEN                       |
+| 2026-11-08 | Celery for background work                          | CONFIRMED | Broker selection remains proposed                  |
+| 2026-11-08 | Embedded website chatbot via script tag             | CONFIRMED | Widget implementation details proposed/open        |
+| 2026-11-08 | Document upload and configurable business rules     | CONFIRMED | Detailed policies open                             |
+| 2026-11-08 | Inspect retrieved context for each answer           | CONFIRMED | Trace schema proposed                              |
+| 2026-11-08 | International SaaS billing                          | CONFIRMED | Provider and pricing OPEN                          |
 
 ---
 
@@ -712,6 +741,7 @@ This document becomes an approved implementation baseline when:
 This register uses the **interactive Q&A numbering**, which differs from the original provisional question list in section 20. The confirmed choices supersede contradictory earlier OPEN/PROPOSED wording. Detailed decisions Q056–Q061 are in `docs/questions_and_answers.md`; Q001–Q055 are consolidated below.
 
 ### Batch 1 — Product identity and accounts
+
 - **Q001:** General-purpose platform with selectable industry templates.
 - **Q002:** Fully localized dashboard and chatbot, customer-selected languages and RTL.
 - **Q003:** Organization is tenant; creator is owner; invite owners and restricted members.
@@ -719,6 +749,7 @@ This register uses the **interactive Q&A numbering**, which differs from the ori
 - **Q005:** Anonymous visitor conversation scoped to browser tab.
 
 ### Batch 2 — Organization and configuration
+
 - **Q006:** Each registered user belongs to exactly one organization.
 - **Q007:** Custom organization-scoped RBAC.
 - **Q008:** Templates copy editable prompts, rules, branding and settings.
@@ -726,6 +757,7 @@ This register uses the **interactive Q&A numbering**, which differs from the ori
 - **Q010:** Chatbot Draft/Publish; published config affects new and subsequent existing-conversation messages; traces preserve version.
 
 ### Batch 3 — Documents
+
 - **Q011:** Knowledge bases auto-publish after successful ingestion.
 - **Q012:** Organization-wide document library; reuse across knowledge bases without duplicate embeddings.
 - **Q013:** PDF, DOCX, TXT, Markdown, CSV, XLSX and HTML.
@@ -733,6 +765,7 @@ This register uses the **interactive Q&A numbering**, which differs from the ori
 - **Q015:** Replacement creates a new document; manual deletion of old one.
 
 ### Batch 4 — Ingestion and plans
+
 - **Q016:** Confirmed deletion detaches document from all knowledge bases, immediately excludes it from retrieval, then cleans up asynchronously.
 - **Q017:** Upload requires selection of one or more knowledge bases.
 - **Q018:** Strict all-or-nothing ingestion except Q021 scanned-PDF exception.
@@ -740,6 +773,7 @@ This register uses the **interactive Q&A numbering**, which differs from the ori
 - **Q020:** Subscription plans govern document count, file size and storage.
 
 ### Batch 5 — Failure and history
+
 - **Q021:** Skip unreadable scanned-PDF pages when readable pages exist; all other processing failures are fatal.
 - **Q022:** Keep failed uploads/reports; retry idempotently without re-upload.
 - **Q023:** On duplicate, show existing document and allow additional knowledge-base attachment.
@@ -747,6 +781,7 @@ This register uses the **interactive Q&A numbering**, which differs from the ori
 - **Q025:** Block downgrade until customer manually meets destination plan limits.
 
 ### Batch 6 — Retrieval and answers
+
 - **Q026:** Template-dependent retrieval; general-purpose uses vector + PostgreSQL full-text hybrid.
 - **Q027:** Insufficient evidence: state unavailability and offer configurable support.
 - **Q028:** Centrally managed AI models; no customer model selection.
@@ -754,6 +789,7 @@ This register uses the **interactive Q&A numbering**, which differs from the ori
 - **Q030:** No visitor citations; internal evidence available to authorized dashboard users.
 
 ### Batch 7 — Retrieval quality and reliability
+
 - **Q031:** Retrieval internals platform-managed, not customer-editable.
 - **Q032:** Hybrid ranking uses Reciprocal Rank Fusion.
 - **Q033:** Evidence sufficiency uses retrieval signals plus LLM assessment.
@@ -761,6 +797,7 @@ This register uses the **interactive Q&A numbering**, which differs from the ori
 - **Q035:** Configurable support links and optional built-in contact form.
 
 ### Batch 8 — Conversation state
+
 - **Q036:** Recent verbatim messages plus rolling summary of older messages.
 - **Q037:** Configurable verbatim window; merge displaced messages incrementally into previous summary.
 - **Q038:** Same-tab refresh restores session; tab closure ends intentional resumability.
@@ -768,6 +805,7 @@ This register uses the **interactive Q&A numbering**, which differs from the ori
 - **Q040:** Authorized users see full transcripts and traces with configurable retention/access.
 
 ### Batch 9 — Memory and retention
+
 - **Q041:** Window counts individual user/assistant messages; excludes system/tool messages.
 - **Q042:** Maximum summary token budget with compression.
 - **Q043:** Summary updates synchronously before answer generation.
@@ -775,6 +813,7 @@ This register uses the **interactive Q&A numbering**, which differs from the ori
 - **Q045:** Chatbot management permission grants transcript and debugging-trace access.
 
 ### Batch 10 — Website widget
+
 - **Q046:** Registered production domains; separate localhost/staging testing mode.
 - **Q047:** Advanced branding including fonts, dimensions, launcher icon and message styles.
 - **Q048:** JavaScript snippet plus optional inline HTML container.
@@ -782,6 +821,7 @@ This register uses the **interactive Q&A numbering**, which differs from the ori
 - **Q050:** Stream responses using SSE.
 
 ### Batch 11 — Security and streaming lifecycle
+
 - **Q051:** Exact hostnames and explicitly configured wildcard subdomains.
 - **Q052:** Cross-origin iframe controlled by lightweight JavaScript loader.
 - **Q053:** Manual forced-online and forced-offline override the schedule until removed; automatic follows schedule.
@@ -816,10 +856,10 @@ This register uses the **interactive Q&A numbering**, which differs from the ori
 
 ### Change log
 
-| Date | Version | Change |
-|---|---|---|
-| 2026-11-08 | 0.2.0 | Reconciled confirmed interactive decisions Q001–Q055 across requirement definitions, memory lifecycle, deferred features and decision register. |
-| 2026-11-08 | 0.3.0 | Incorporated Q056–Q061: shared-table tenancy, canonical embeddings, checkpoint-authoritative full history, monthly AI credits, manual test plans and paid-launch payment gate. |
+| Date       | Version | Change                                                                                                                                                                         |
+| ---------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 2026-11-08 | 0.2.0   | Reconciled confirmed interactive decisions Q001–Q055 across requirement definitions, memory lifecycle, deferred features and decision register.                                |
+| 2026-11-08 | 0.3.0   | Incorporated Q056–Q061: shared-table tenancy, canonical embeddings, checkpoint-authoritative full history, monthly AI credits, manual test plans and paid-launch payment gate. |
 
 ---
 
@@ -872,3 +912,194 @@ The persisted summary cursor must identify exactly which original messages were 
 - Define database constraints and tenant-scoping patterns before writing tenant-owned models.
 - Choose embedding model and version migration strategy when implementing ingestion.
 - Choose live payment provider before the first paid launch, not before initial core development.
+
+## 24. Docker Compose — Development and Production Infrastructure
+
+**Decision ID:** INFRA-001  
+**Status:** CONFIRMED  
+**Priority:** P0  
+**Date:** 2026-11-08
+
+### 24.1 Core Decision
+
+ChatHat shall use **Docker and Docker Compose for both local development and production deployment**.
+
+Docker Compose shall be the primary mechanism for defining, configuring, starting, and managing the application's services in both environments.
+
+The development and production environments shall share the same fundamental service architecture while allowing environment-specific configuration.
+
+Kubernetes and other container orchestration platforms are not required for the initial release.
+
+### 24.2 Service Architecture
+
+**INFRA-006 [CONFIRMED, P0] — Nginx Reverse Proxy**
+
+ChatHat shall use **Nginx as a dedicated Docker Compose service** in both development and production environments.
+
+The Docker Compose architecture shall support the following services:
+
+| Service               | Responsibility                                                                                        |
+| --------------------- | ----------------------------------------------------------------------------------------------------- |
+| Nginx                 | Reverse proxy, HTTP routing, static assets, SSE proxy configuration, and production HTTPS termination |
+| FastAPI               | HTTP API, dashboard, authentication, chatbot endpoints, and SSE streaming                             |
+| PostgreSQL + pgvector | Application database, vector embeddings, and LangGraph checkpoints                                    |
+| Redis                 | Celery message broker and approved shared-state requirements                                          |
+| Celery Worker         | Document ingestion, embedding generation, and asynchronous background tasks                           |
+| Celery Beat           | Scheduled maintenance, retention cleanup, and periodic tasks when required                            |
+
+#### Nginx Requirements
+
+1. Nginx shall run in its own container and communicate with FastAPI over the internal Docker Compose network.
+2. Nginx shall serve as the public entry point for application HTTP traffic.
+3. Production Nginx shall terminate HTTPS using valid TLS certificates.
+4. Nginx shall forward the appropriate client IP, host, and protocol information to FastAPI using trusted proxy headers.
+5. Nginx shall support long-lived SSE connections by disabling response buffering for streaming endpoints and configuring appropriate timeouts.
+6. Nginx shall enforce appropriate request body size limits, particularly for document uploads.
+7. Nginx shall serve static assets directly where practical.
+8. PostgreSQL, Redis, Celery, and FastAPI shall not expose public ports in production.
+9. Development Nginx may use HTTP, while production shall enforce HTTPS.
+10. Nginx configuration shall be version-controlled, with environment-specific settings where necessary.
+
+#### Expected Request Flow
+
+```text
+Website Visitor / Dashboard User
+              |
+              v
+          Nginx
+       (Docker Service)
+              |
+              v
+          FastAPI
+              |
+       +------+------+
+       |             |
+       v             v
+   PostgreSQL      Redis
+   + pgvector        |
+                     v
+                Celery Worker
+```
+
+**Acceptance criteria:** All public HTTP requests pass through Nginx; SSE streams function without proxy buffering; internal infrastructure services remain inaccessible from the public internet.
+
+### 24.3 Development Environment
+
+**INFRA-002 [CONFIRMED, P0]**
+
+The local development environment shall:
+
+1. Start required infrastructure and application services through Docker Compose.
+2. Support source-code bind mounts and FastAPI automatic reload for efficient development.
+3. Use persistent Docker volumes for PostgreSQL data and other state that must survive container restarts.
+4. Load development configuration from environment variables and development-specific configuration files.
+5. Support running Alembic migrations, management commands, and pytest inside containers.
+6. Expose only the ports needed for local development and debugging.
+7. Allow developers to inspect logs, restart services, and execute commands using standard Docker Compose commands.
+8. Avoid requiring PostgreSQL, Redis, or other infrastructure services to be installed directly on the host operating system.
+
+### 24.4 Production Environment
+
+**INFRA-003 [CONFIRMED, P0]**
+
+The production environment shall:
+
+1. Deploy application services using Docker Compose.
+2. Use production-ready container images without development bind mounts or automatic reload.
+3. Support configurable FastAPI and Celery process concurrency.
+4. Persist PostgreSQL data using appropriate durable storage.
+5. Keep PostgreSQL, Redis, and internal service ports inaccessible from the public internet.
+6. Expose public application traffic through a reverse proxy with HTTPS.
+7. Manage production secrets securely without embedding credentials in Docker images or committing them to Git.
+8. Define health checks, restart policies, and appropriate resource limits.
+9. Support database migrations as an explicit deployment step.
+10. Support repeatable deployment and rollback procedures.
+11. Implement automated backups and periodically verify restoration.
+12. Support monitoring, centralized or persistent logs, and operational diagnostics.
+
+Docker Compose restart policies and health checks do not, by themselves, provide high availability or automatic failover. Production availability and recovery requirements must be addressed separately.
+
+### 24.5 Configuration Strategy
+
+**INFRA-004 [CONFIRMED, P0]**
+
+ChatHat shall maintain a shared Compose configuration with environment-specific overrides or equivalent Compose configuration files.
+
+The implementation should follow this structure unless a simpler maintainable arrangement is justified:
+
+```text
+ChatHat/
+├── Dockerfile
+├── compose.yaml
+├── compose.dev.yaml
+├── compose.prod.yaml
+├── .env.example
+├── .dockerignore
+└── ...
+```
+
+- `compose.yaml` defines shared service configuration.
+- `compose.dev.yaml` defines development-specific behavior.
+- `compose.prod.yaml` defines production-specific behavior.
+- `.env.example` documents required configuration variables without exposing secrets.
+- `Dockerfile` defines the application image build.
+
+Development and production should use compatible application images and dependency versions to reduce environment-specific failures.
+
+### 24.6 Testing Requirements
+
+**INFRA-005 [CONFIRMED, P0]**
+
+The testing strategy shall integrate with Docker Compose and pytest.
+
+1. Tests must be executable inside the application container.
+2. Integration tests shall run against isolated PostgreSQL and Redis test resources when required.
+3. Database tests must never modify development or production data.
+4. Test database initialization and Alembic migrations must be reproducible.
+5. Integration tests shall verify real infrastructure behavior rather than relying exclusively on mocks.
+6. CI shall execute relevant tests using a reproducible container-based environment.
+7. Container startup, health checks, and service connectivity shall be verified before production deployment.
+
+### 24.7 Implementation Plan Impact
+
+The implementation curriculum shall introduce Docker Compose in **Phase 01**, not postpone containerization until deployment.
+
+The recommended progression is:
+
+1. Create the application Dockerfile and development Compose configuration.
+2. Run FastAPI inside Docker with automatic reload.
+3. Introduce PostgreSQL and pgvector through Compose.
+4. Configure Alembic migrations and isolated pytest database execution.
+5. Introduce Redis and Celery when asynchronous processing is implemented.
+6. Add production Compose configuration, reverse proxy, secrets handling, health checks, backups, and deployment procedures.
+7. Verify production behavior through deployment and recovery tests.
+
+All subsequent implementation and testing lessons shall use the Docker Compose development environment as their standard execution environment.
+
+### 24.8 Acceptance Criteria
+
+This decision is implemented when:
+
+- A developer can clone the repository, configure the required environment variables, and start the application using Docker Compose.
+- FastAPI, PostgreSQL, Redis, and Celery operate together when their respective phases are implemented.
+- pytest and Alembic commands run successfully within the containerized development environment.
+- Production deployment uses Docker Compose with production-specific configuration.
+- Application and database state survive ordinary container restarts.
+- Production services are appropriately isolated, secured, monitored, and backed up.
+- Development and production deployment procedures are documented and reproducible.
+
+### 24.9 Related Specification Requirements
+
+This decision refines the following existing requirements:
+
+- `TECH-008` — Redis and Celery infrastructure.
+- `TECH-010` — Modular monolith with separately deployable processes.
+- `TECH-013` — Deployment topology.
+- `JOB-002` — Background workers.
+- `NFR-002` — Availability, backups, and recovery.
+- `NFR-004` — API and worker scaling.
+- `NFR-009` — Environment configuration and deployment.
+- `QA-002` — Infrastructure integration testing.
+- `ROAD-001` — Incremental implementation phases.
+
+**Remaining decisions:** Production hosting provider, server sizing, deployment region, backup targets, and availability objectives remain open. Docker Compose does not determine these choices.
