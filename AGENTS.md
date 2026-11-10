@@ -10,6 +10,8 @@ Read the relevant parts of these files **from the current checkout** before prop
 2. `docs/chathat-spec.md` — authoritative product behavior and confirmed decisions.
 3. `docs/chathat-implementation-plan.md` — phase sequence, lesson IDs, dependencies, teaching and testing contracts.
 4. `docs/progress-documentation/phase_1.md` — Phase 01 progress (and the corresponding `phase_N.md` when it exists).
+5. The current phase's lesson notes, when available. See [Phase 01 notes](docs/lessons/phase-01-containerized-application-foundation/phase-01-notes.md) and use `docs/lessons/phase-*/phase-*-notes.md` to find the corresponding file for future phases.
+6. [`src/chathat/README.md`](src/chathat/README.md) — compact source map. Use it to find the entry points and files relevant to the task before opening source files.
 
 Inspect the actual repository tree and relevant source files. Do not assume files, commands, services, or implementation status exist because they appear in the plan. When documentation conflicts, explain the conflict before proceeding. The specification controls product requirements; the implementation plan controls lesson order; actual source and test results control what is implemented. An unchecked lesson is not proof that code is absent, and a checked lesson is not proof tests currently pass.
 
@@ -68,5 +70,9 @@ Use `docs/codex-lesson-guide.md` for the response template and progress-recordin
 ## Progress documentation
 
 After a lesson is **verified**, propose an update to its row in `docs/progress-documentation/phase_1.md` (or the relevant phase tracker): status, completion date, test evidence/commit and concise notes. **Do not edit the tracker automatically unless authorized.** Do not mark implementation complete merely because code was shown, and do not mark testing complete without verified results.
+
+Use the tracker for lesson status and the corresponding phase notes for implementation decisions, deviations, and detailed verification evidence. When authorized to update progress documentation, link to the relevant notes entry from the tracker's evidence column.
+
+After each verified implementation or testing lesson, refresh [`src/chathat/README.md`](src/chathat/README.md) with the latest completed lesson and any added, moved, removed, or repurposed files. Keep entries short and focused on file responsibilities and entry points. Link to phase notes for decisions and verification details.
 
 If the user asks for a lesson, begin with the next requested lesson (or ask which lesson only if genuinely ambiguous). If the user asks for an implementation plan, follow the existing plan rather than inventing a parallel curriculum.

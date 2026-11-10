@@ -2,8 +2,8 @@
 
 > **Source of truth:** [Implementation plan](../chathat-implementation-plan.md), Phase 01.  
 > **Specification:** [ChatHat specification](../chathat-spec.md), section 24 (Docker Compose and Nginx).  
-> **Progress:** 0 / 12 lessons completed (0%).  
-> **Last reviewed:** 2026-11-08.
+> **Progress:** 1 / 12 lessons completed (8.3%).\
+> **Last reviewed:** 2026-11-10.
 
 ## Lesson progress
 
@@ -11,7 +11,7 @@ Update a row **only after** the lesson's work and verification are complete. Rec
 
 | Lesson | Type | Lesson name | Status | Date completed | Commit / evidence | Notes |
 |---|---|---|---|---|---|---|
-| P01-I01 | Implement | FastAPI package and application factory | Not started | — | — | — |
+| P01-I01 | Implement | FastAPI package and application factory | Completed | 2026-11-10 | [Smoke check and implementation index](../lessons/phase-01-containerized-application-foundation/phase-01-notes.md#verification) | Verified HTTP 200 and 503, lifespan, and factory isolation. |
 | P01-T01 | Test | FastAPI package and application factory | Not started | — | — | — |
 | P01-I02 | Implement | Dockerfile and development Compose foundation | Not started | — | — | — |
 | P01-T02 | Test | Dockerized FastAPI and Compose configuration | Not started | — | — | — |
