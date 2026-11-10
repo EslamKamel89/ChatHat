@@ -38,4 +38,13 @@ curl -i http://127.0.0.1:8000/health
 
 Stop the server with Ctrl+C to observe shutdown. Repeat with `--lifespan off` for the 503 branch.
 
-Next is **P01-T01** for pytest coverage of route behavior, factory isolation, lifespan startup and shutdown, and startup failure. Pytest verification is pending. Proceed to P01-I02 after the paired tests pass.
+## P01-T01 · Test the FastAPI package and application factory
+
+**Completed 2026-11-10.** The submitted diff matches the checkout. [Lesson walkthrough](../lessons/phase-01-containerized-application-foundation/P01-T01-fastapi-package-and-application-factory.md)
+
+- [tests/test_app.py](../../tests/test_app.py) covers HTTP 200 and 503 from `/health`, HTTP 404 for an unknown route, app state isolation through startup and shutdown, and startup exception propagation.
+- [pyproject.toml](../../pyproject.toml) declares `pytest` and `httpx2` in the uv development group. [uv.lock](../../uv.lock) records their resolved versions.
+
+The user's `pytest` run from the repository root collected five tests and reported **5 passed in 0.26s** on macOS with Python 3.12.7 and pytest 9.2.0.
+
+Next is **P01-I02 — Dockerfile and development Compose foundation**.
