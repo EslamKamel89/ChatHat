@@ -1,6 +1,6 @@
 # ChatHat source map
 
-Last completed lesson **P01-I01 — FastAPI package and application factory**. [Progress tracker](../../docs/progress-documentation/phase_1.md) · [Implementation decisions and verification](../../docs/lessons/phase-01-containerized-application-foundation/phase-01-notes.md)
+Last completed lesson **P01-I01 — FastAPI package and application factory**. [Progress tracker](../../docs/progress-documentation/phase_1.md) · [Implementation decisions and verification](../../docs/progress-documentation/phase-01-notes.md)
 
 | File | Read it for |
 | --- | --- |

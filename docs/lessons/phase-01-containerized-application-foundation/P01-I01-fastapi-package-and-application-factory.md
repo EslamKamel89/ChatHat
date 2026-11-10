@@ -2,7 +2,7 @@
 
 **Objective** — Build an installable ChatHat package, a factory that creates a fresh FastAPI application, and a typed health route backed by the application's lifespan.
 
-> The walkthrough below records the original teaching example. The checkout uses uv and `uv_build`. See the [Phase 01 notes](phase-01-notes.md#p01-i01--fastapi-package-and-application-factory) for the implementation index and the verified run command.
+> The walkthrough below records the original teaching example. The checkout uses uv and `uv_build`. See the [Phase 01 notes](../../progress-documentation/phase-01-notes.md#p01-i01--fastapi-package-and-application-factory) for the implementation index and the verified run command.
 
 At the start of this lesson, the checkout contained documentation and an empty lesson directory. The curriculum places the first Compose setup in P01-I02, so this lesson uses a temporary loopback-only demo. The phase's development environment uses Compose and Nginx once those services are introduced. [Implementation plan](../../chathat-implementation-plan.md#phase-01--containerized-application-foundation) · [Product specification, technology stack and infrastructure](../../chathat-spec.md#2-confirmed-technology-stack-and-engineering-constraints) · [Docker Compose infrastructure](../../chathat-spec.md#24-docker-compose--development-and-production-infrastructure)
 
@@ -138,5 +138,5 @@ curl -i http://127.0.0.1:8000/health
 ## Checkpoint
 
 - The increment consists of `pyproject.toml`, the two `__init__.py` files, `src/chathat/api/health.py`, and `src/chathat/main.py`.
-- Confirm that the package imports through Uvicorn, startup succeeds, the health response matches the contract, and shutdown completes. [Verification for the uv implementation](phase-01-notes.md#verification)
+- Confirm that the package imports through Uvicorn, startup succeeds, the health response matches the contract, and shutdown completes. [Verification for the uv implementation](../../progress-documentation/phase-01-notes.md#verification)
 - Next is **P01-T01**, the separate pytest lesson for route behavior, instance isolation, lifespan startup and shutdown, and startup failure. Continue to P01-I02 after the paired tests pass. [Phase 01 tracker](../../progress-documentation/phase_1.md)

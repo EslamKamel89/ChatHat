@@ -1,19 +1,19 @@
 # Phase 01 completion notes
 
-This is the source of truth for Phase 01 lesson decisions, deviations, and verification evidence. Add a dated entry for each lesson and record completion once its acceptance checks pass. The [Phase 01 tracker](../../progress-documentation/phase_1.md) provides the status overview.
+This is the source of truth for Phase 01 lesson decisions, deviations, and verification evidence. Add a dated entry for each lesson and record completion once its acceptance checks pass. The [Phase 01 tracker](phase_1.md) provides the status overview.
 
 ## P01-I01 · FastAPI package and application factory
 
-**Verified 2026-11-10.** The six implementation files and the initial notes matched the submitted diff before this update. [Original walkthrough](P01-I01-fastapi-package-and-application-factory.md)
+**Verified 2026-11-10.** The six implementation files and the initial notes matched the submitted diff before this update. [Original walkthrough](../lessons/phase-01-containerized-application-foundation/P01-I01-fastapi-package-and-application-factory.md)
 
 ### Implementation index
 
 | Files | Responsibility |
 | --- | --- |
-| [`pyproject.toml`](../../../pyproject.toml), [`uv.lock`](../../../uv.lock) | Declare the build backend, Python and dependency requirements, and resolved dependency versions. |
-| [`chathat/__init__.py`](../../../src/chathat/__init__.py), [`chathat/api/__init__.py`](../../../src/chathat/api/__init__.py) | Define the application and API packages under `src/`. |
-| [`health.py`](../../../src/chathat/api/health.py) | Defines the response schema and maps startup state to HTTP 200 or 503. |
-| [`main.py`](../../../src/chathat/main.py) | Registers the health router on each new app and owns the startup flag through lifespan. |
+| [`pyproject.toml`](../../pyproject.toml), [`uv.lock`](../../uv.lock) | Declare the build backend, Python and dependency requirements, and resolved dependency versions. |
+| [`chathat/__init__.py`](../../src/chathat/__init__.py), [`chathat/api/__init__.py`](../../src/chathat/api/__init__.py) | Define the application and API packages under `src/`. |
+| [`health.py`](../../src/chathat/api/health.py) | Defines the response schema and maps startup state to HTTP 200 or 503. |
+| [`main.py`](../../src/chathat/main.py) | Registers the health router on each new app and owns the startup flag through lifespan. |
 
 ### Decisions from implementation
 

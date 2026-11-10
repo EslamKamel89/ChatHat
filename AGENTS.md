@@ -10,7 +10,7 @@ Read the relevant parts of these files **from the current checkout** before prop
 2. `docs/chathat-spec.md` — authoritative product behavior and confirmed decisions.
 3. `docs/chathat-implementation-plan.md` — phase sequence, lesson IDs, dependencies, teaching and testing contracts.
 4. `docs/progress-documentation/phase_1.md` — Phase 01 progress (and the corresponding `phase_N.md` when it exists).
-5. The current phase's lesson notes, when available. See [Phase 01 notes](docs/lessons/phase-01-containerized-application-foundation/phase-01-notes.md) and use `docs/lessons/phase-*/phase-*-notes.md` to find the corresponding file for future phases.
+5. The current phase's lesson notes, when available. See [Phase 01 notes](docs/progress-documentation/phase-01-notes.md) and use `docs/progress-documentation/phase-*-notes.md` to find the corresponding file for future phases.
 6. [`src/chathat/README.md`](src/chathat/README.md) — compact source map. Use it to find the entry points and files relevant to the task before opening source files.
 
 Inspect the actual repository tree and relevant source files. Do not assume files, commands, services, or implementation status exist because they appear in the plan. When documentation conflicts, explain the conflict before proceeding. The specification controls product requirements; the implementation plan controls lesson order; actual source and test results control what is implemented. An unchecked lesson is not proof that code is absent, and a checked lesson is not proof tests currently pass.
