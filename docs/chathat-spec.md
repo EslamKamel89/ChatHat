@@ -1,8 +1,8 @@
 # ChatHat — Product Requirements Specification
 
-> **Document version:** 0.3.0  
-> **Status:** Draft — decisions Q001–Q061 incorporated; unresolved implementation details remain  
-> **Last updated:** 2026-11-08  
+> **Document version** 0.4.0\
+> **Status** Draft with decisions Q001–Q061 and feature-based source organization incorporated\
+> **Last updated** 2026-11-11\
 > **Repository (code SSOT):** https://github.com/EslamKamel89/ChatHat  
 > **Document role:** Product and behavioral requirements; not evidence that features are implemented.
 
@@ -128,6 +128,8 @@ If specification and code disagree, report the discrepancy rather than silently 
 
 **TECH-013 [OPEN, P0]** Hosting provider, deployment topology, secrets management, and infrastructure budget.
 
+**TECH-014 [CONFIRMED, P0]** Organize ChatHat's FastAPI source by feature. Each feature owns its code and pytest tests in a single package under `src/chathat/`.
+
 ### 2.1 Engineering principles
 
 - Preserve explicit boundaries between HTTP/API, business services, persistence, AI orchestration, background tasks, and third-party providers.
@@ -135,6 +137,13 @@ If specification and code disagree, report the discrepancy rather than silently 
 - Use LangGraph for checkpointing, graph execution, and applicable memory tools; custom code is justified for product-specific contracts, audit records, tenant isolation, and retrieval diagnostics.
 - Separate product requirements from specific library APIs. Verify current LangGraph recommendations at implementation time; do not assume that a particular agent or middleware API remains unchanged.
 - Treat browser-provided chatbot IDs, thread IDs, and metadata as untrusted input.
+
+### 2.2 Feature packages
+
+- Keep each feature's routing, request and response schemas, models, services, controllers, and other feature-specific code in its package. Add modules as the feature needs them. FastAPI route handlers can serve as controllers.
+- Use `src/chathat/core/` for application-wide code such as health checks, lifespan, settings, and database session setup. Use `src/chathat/auth/` for authentication code such as sign-in, sessions, and identity dependencies when that feature is introduced.
+- Keep the application factory in `src/chathat/main.py`. It assembles the FastAPI app and registers feature routers. Feature packages own their route definitions.
+- Place each feature's pytest suite and feature-specific fixtures in `src/chathat/<feature>/tests/`. For example, the factory, lifespan, and health tests belong in `src/chathat/core/tests/`. Pytest must discover the feature suites when run from the repository root.
 
 ---
 
@@ -718,6 +727,7 @@ The following are not confirmed MVP commitments:
 | 2026-11-08 | Document upload and configurable business rules     | CONFIRMED | Detailed policies open                             |
 | 2026-11-08 | Inspect retrieved context for each answer           | CONFIRMED | Trace schema proposed                              |
 | 2026-11-08 | International SaaS billing                          | CONFIRMED | Provider and pricing OPEN                          |
+| 2026-11-11 | Feature-based source organization (TECH-014)       | CONFIRMED | Each feature owns its code and pytest suite.        |
 
 ---
 
@@ -860,6 +870,7 @@ This register uses the **interactive Q&A numbering**, which differs from the ori
 | ---------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | 2026-11-08 | 0.2.0   | Reconciled confirmed interactive decisions Q001–Q055 across requirement definitions, memory lifecycle, deferred features and decision register.                                |
 | 2026-11-08 | 0.3.0   | Incorporated Q056–Q061: shared-table tenancy, canonical embeddings, checkpoint-authoritative full history, monthly AI credits, manual test plans and paid-launch payment gate. |
+| 2026-11-11 | 0.4.0   | Added TECH-014 for feature packages that own their code and pytest suites. |
 
 ---
 

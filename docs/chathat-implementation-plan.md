@@ -1,7 +1,7 @@
 # ChatHat — Implementation Curriculum and Phase Plan
 
 > **Status:** Proposed implementation curriculum; implementation progress is tracked separately.  
-> **Baseline:** Latest GitHub `docs/chathat-spec.md` v0.3.0, decisions Q001–Q061 and INFRA-001–INFRA-006 (Docker Compose and Nginx).  
+> **Baseline** `docs/chathat-spec.md` v0.4.0, including TECH-014, Q001–Q061, and INFRA-001–INFRA-006.\
 > **Repository:** https://github.com/EslamKamel89/ChatHat  
 > **Created:** 2026-11-08  
 > **Repository inspection:** On 2026-11-08, the repository contained documentation including `docs/chathat-spec.md` and `docs/chathat-implementation-plan.md`; no application code was present in the inspected tree.
@@ -20,13 +20,15 @@ Each **testing lesson** must include: the contract from the previous lesson; pyt
 
 **Non-negotiable architecture:** Shared PostgreSQL tables with strict tenant isolation (Q056); canonical document embeddings across KBs (Q057); complete original messages in authoritative LangGraph checkpoint state with derived context and transcripts (Q058/Q061); monthly AI credits with atomic reservations and measured settlement (Q059); manual plan provisioning before paid launch, payment integration before charging customers (Q060). Keep separate trace/evidence snapshots as required by the spec, without creating a second authoritative conversation transcript.
 
+**Feature packages (TECH-014)** — Keep routes, schemas, models, services, dependencies, and other feature-specific code under `src/chathat/<feature>/`. Keep feature tests and fixtures in that package's `tests/` directory. The factory in `src/chathat/main.py` assembles the app and registers feature routers. [Specification §2.2](chathat-spec.md#22-feature-packages)
+
 **Scope gates, not extra questionnaires:** Before implementing provider-specific integrations, select a compatible provider and validate contracts. Before production release, resolve payment eligibility, data protection, retention, operational budgets and measurable release thresholds. These do not block planning or the early phases.
 
 ## Curriculum map
 
 | Phase | Focus | Implementation lessons | Pytest lessons | Total |
 |---|---|---:|---:|---:|
-| 01 — Containerized application foundation | Build FastAPI inside Docker Compose with Nginx, typed settings, PostgreSQL/pgvector, Alembic and pytest/CI. | 6 | 6 | 12 |
+| 01 — Containerized application foundation | Organize FastAPI by feature and run it inside Docker Compose with Nginx, typed settings, PostgreSQL/pgvector, Alembic and pytest/CI. | 7 | 7 | 14 |
 | 02 — Organizations, identity and authorization | Establish shared-table multi-tenancy and secure organization-level access before introducing tenant-owned features. | 5 | 5 | 10 |
 | 03 — Plans, entitlements and credit ledger | Make usage and cost enforcement part of the platform before invoking chargeable models; use manually provisioned plans. | 3 | 3 | 6 |
 | 04 — Chatbot configuration and knowledge-base relationships | Build the tenant-facing chatbot lifecycle and document/knowledge-base associations before ingestion. | 4 | 4 | 8 |
@@ -38,7 +40,7 @@ Each **testing lesson** must include: the contract from the previous lesson; pyt
 | 10 — Internationalization and customer-ready dashboard | Complete localized management journeys and the full chatbot customization experience. | 3 | 3 | 6 |
 | 11 — Payments and subscription lifecycle | Integrate a verified international payment provider only after onboarding/legal feasibility is resolved. | 3 | 3 | 6 |
 | 12 — Production Compose, operations and release | Harden Nginx/TLS, Compose deployments, backups, performance and security before launch. | 5 | 5 | 10 |
-| **Total** | | **53** | **53** | **106** |
+| **Total** | | **54** | **54** | **108** |
 
 ## Phase 01 — Containerized application foundation
 
@@ -54,6 +56,16 @@ Create `pyproject.toml`, `src/chathat/`, a FastAPI application factory, typed ro
 
 Use pytest with `TestClient` or `httpx.AsyncClient`/`ASGITransport` and an explicit lifespan manager as appropriate. Verify routing, lifespan initialization/shutdown, health response and startup errors.
 
+### P01-I07 — Implement: Organize the application foundation by feature
+
+This pair runs after P01-T01 and before P01-I02. It uses new IDs so the original lesson references stay valid.
+
+Move the health router and its response schema to `src/chathat/core/health.py`, lifespan to `src/chathat/core/lifespan.py`, and the existing app tests to `src/chathat/core/tests/test_app.py`. Adjust imports and remove the empty top-level API package after its health module moves. Keep `chathat.main:create_app` as the installed entry point and preserve the health and lifespan contracts. Update the source map when the refactor is verified.
+
+### P01-T07 — Test: Verify feature-local test discovery and core behavior
+
+From the repository root, run `uv run --locked pytest -q src/chathat/core/tests` and `uv run --locked pytest -q`. Both runs must discover and pass the same five existing tests. Verify HTTP 200 and 503 from `/health`, 404 for an unknown route, lifespan cleanup and app isolation, and startup failure propagation. Keep the failure injection at the lifespan name the factory actually resolves. Check the installed factory entry point and proceed to P01-I02 after verification.
+
 ### P01-I02 — Implement: Dockerfile and development Compose foundation
 
 Create a reproducible `Dockerfile`, `.dockerignore`, `compose.yaml`, `compose.dev.yaml`, and `.env.example`. Containerize FastAPI with bind-mounted source and Uvicorn reload in development; use named networks, dependency/health semantics, and non-root image execution where practical. Explain image build versus container start, build context, bind mounts versus volumes, Compose project isolation, and `docker compose -f compose.yaml -f compose.dev.yaml` precedence. Avoid adding Redis/Celery before the relevant phase.
@@ -61,6 +73,8 @@ Create a reproducible `Dockerfile`, `.dockerignore`, `compose.yaml`, `compose.de
 ### P01-T02 — Test: Dockerized FastAPI and Compose configuration
 
 Run pytest inside the FastAPI container; add pytest-driven subprocess/HTTP smoke checks that validate the Compose-rendered config and FastAPI health through its development interface. Verify rebuild/restart behavior, dependency installation, environment separation, and that the test command is reproducible from a fresh checkout. Use `docker compose config` as a supplementary validation, not a substitute for tests.
+
+Verify that the container's pytest command discovers the feature-local core suite from the repository root inside the container.
 
 ### P01-I03 — Implement: Nginx Compose service and internal routing
 
@@ -72,7 +86,7 @@ Use pytest HTTP integration tests against the **Nginx endpoint**, not merely the
 
 ### P01-I04 — Implement: Typed settings and environment boundaries
 
-Use `pydantic-settings` for explicit development/test/production settings, environment overrides, secret redaction and dependency injection. Keep `.env.example` safe, actual credentials out of Git and secrets out of container images. Explain configuration loading and process startup versus per-request dependencies.
+Use `pydantic-settings` in `src/chathat/core/` for explicit development/test/production settings, environment overrides, secret redaction and dependency injection. Keep `.env.example` safe, actual credentials out of Git and secrets out of container images. Explain configuration loading and process startup versus per-request dependencies.
 
 ### P01-T04 — Test: Configuration and secret safety
 
@@ -99,6 +113,8 @@ Execute the pytest suite inside the application image, run the migration smoke t
 ## Phase 02 — Organizations, identity and authorization
 
 **Focus:** Establish shared-table multi-tenancy and secure organization-level access before introducing tenant-owned features.
+
+Keep authentication routes, identity dependencies, session and sign-in logic, auth-owned models, and tests together under `src/chathat/auth/`. Keep organization membership and role policy with the organization feature.
 
 **Exit deliverable:** A tenant-safe authenticated dashboard.
 
@@ -540,6 +556,7 @@ Run all pytest suites, Playwright browser tests, retrieval-quality evaluations, 
 
 ## Required testing architecture
 
+- **Test ownership and discovery:** Place each feature's tests and fixtures in `src/chathat/<feature>/tests/`. Running pytest from the repository root must discover the feature suites locally and in the application test container.
 - **Fast unit tests:** Pure rules, state machines, RBAC policy, RRF, chunking, summary window and credit arithmetic; use pytest parametrization and simple fakes.
 - **API tests:** `httpx.AsyncClient` + `ASGITransport`, application dependency overrides and authenticated/unauthenticated sessions; validate HTTP contracts, authorization and response shapes.
 - **Database integration:** Isolated disposable PostgreSQL with pgvector and actual Alembic migrations. Verify constraints, transaction rollback, concurrency and tenant filters. Avoid SQLite as a substitute for PostgreSQL behavior.
@@ -604,3 +621,4 @@ Run all pytest suites, Playwright browser tests, retrieval-quality evaluations, 
 | Date | Revision | Change |
 |---|---|---|
 | 2026-11-08 | 1.1 | Regenerated from latest GitHub specification: Docker Compose for development and production, dedicated Nginx service, containerized pytest/Alembic, production TLS/SSE, backup and deployment tests. Expanded to 106 alternating lessons. |
+| 2026-11-11 | 1.2 | Added P01-I07 and P01-T07 before Docker setup to adopt TECH-014. The curriculum now has 108 lessons. |

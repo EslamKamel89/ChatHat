@@ -10,4 +10,4 @@ Last completed lesson **P01-T01 — Test the FastAPI package and application fac
 | [`tests/test_app.py`](../../tests/test_app.py) | In-process API tests for health and routing, app state isolation, lifespan, and startup failure. |
 | [`pyproject.toml`](../../pyproject.toml), [`uv.lock`](../../uv.lock) | Python 3.12+, the `uv_build` backend, runtime dependencies, and the `pytest` and `httpx2` development dependencies. |
 
-Next lesson **P01-I02 — Dockerfile and development Compose foundation**.
+Next lesson **P01-I07 — Organize the application foundation by feature**. [Implementation plan](../../docs/chathat-implementation-plan.md#p01-i07--implement-organize-the-application-foundation-by-feature)
