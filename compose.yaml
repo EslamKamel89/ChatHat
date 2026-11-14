@@ -1,0 +1,16 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: dockerfiles/Dockerfile.api
+    init: true
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/health', timeout=2).close()"
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s

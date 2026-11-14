@@ -79,4 +79,22 @@ After extracting the schema, ran `.venv/bin/python -m pytest -q src/chathat/core
 
 The evidence verifies discovery from the repository root and core feature directory, the five existing behavior contracts, and the running application's health endpoint. The supplied excerpt contains the HTTP response alongside the user's confirmation that the previous step is complete.
 
-Next is **P01-I02 — Dockerfile and development Compose foundation**.
+## P01-I02 · Dockerfile and development Compose foundation
+
+**Completed 2026-11-15.** Reviewed the working-tree implementation and the user's confirmation of completion. The supplied containerized pytest output reports **5 passed in 0.37s** on Linux with Python 3.12.7 and pytest 9.2.0. All five tests were discovered under `src/chathat/core/tests/test_app.py`.
+
+| File | Implementation |
+| --- | --- |
+| [dockerfiles/Dockerfile.api](../../dockerfiles/Dockerfile.api) | Python 3.12.7 and uv 0.13.7 image inputs, non-root user 10001, locked development dependencies, and installed Uvicorn factory entry point. Installs dependencies before copying source for build-cache reuse, then installs the project. |
+| [.dockerignore](../../.dockerignore) | Excludes the host virtual environment, local environment files, caches, and runtime data from the build context. |
+| [compose.yaml](../../compose.yaml) | Builds the API image using the relocated Dockerfile, supplies an init process and an HTTP health check, and uses Compose's default project network. |
+| [compose.dev.yaml](../../compose.dev.yaml) | Enables source reload, a read-only source bind mount, and a loopback-bound configurable host port. |
+| [.env.example](../../.env.example) | Documents `CHATHAT_DEV_PORT=8000`. |
+| [commands.txt](../../commands.txt) | Records development startup, containerized pytest, and shutdown commands. |
+| [main.py](../../src/chathat/main.py) | Removes the guarded development launcher. The installed `chathat.main:create_app` factory is used by Docker. |
+
+The submitted command `docker compose -f compose.yaml -f compose.dev.yaml exec api python -m pytest` passed. The supplied `down` output confirms removal of `chathat-api-1` and `chathat_default`. A review-time `docker compose -f compose.yaml -f compose.dev.yaml config --quiet` also exited successfully.
+
+The Dockerfile lives under `dockerfiles/`, and the service uses Compose's default network in place of the walkthrough's explicit `backend` network. Compose still scopes that network to the project. The console excerpt verifies pytest and shutdown. Health-check and reload configuration were inspected in source, with runtime completion reported by the user.
+
+Next is **P01-T02 — Dockerized FastAPI and Compose configuration**, which adds pytest coverage for the container and Compose contracts.

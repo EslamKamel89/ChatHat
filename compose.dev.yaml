@@ -1,0 +1,19 @@
+services:
+  api:
+    command:
+      - uvicorn
+      - chathat.main:create_app
+      - --factory
+      - --lifespan
+      - "on"
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --reload
+      - --reload-dir
+      - /app/src
+    ports:
+      - "127.0.0.1:${CHATHAT_DEV_PORT:-8000}:8000"
+    volumes:
+      - ./src:/app/src:ro

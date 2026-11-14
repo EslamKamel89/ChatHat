@@ -8,9 +8,3 @@ def create_app() -> FastAPI:
     app = FastAPI(lifespan=lifespan)
     app.include_router(health_router)
     return app
-
-
-if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run("src.chathat.main:create_app", host="127.0.0.1", port=8000, reload=True)
