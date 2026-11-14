@@ -65,4 +65,18 @@ The initial refactor kept `HealthResponse` in the health route module and placed
 
 After extracting the schema, ran `.venv/bin/python -m pytest -q src/chathat/core/tests` and observed **5 passed in 0.21s**.
 
-Next is **P01-T07 — Verify feature-local test discovery and core behavior**. The supplied output verifies repository-root discovery, and the schema extraction check verifies the focused feature suite. The installed Uvicorn entry-point demonstration remains pending.
+## P01-T07 · Verify feature-local test discovery and core behavior
+
+**Completed 2026-11-14.** The user confirmed completion and supplied console evidence for discovery, execution, and the Uvicorn health response.
+
+| Command | Supplied result |
+| --- | --- |
+| `uv run --locked pytest --collect-only -q src/chathat/core/tests` | The five expected tests collected in 0.15s. |
+| `uv run --locked pytest --collect-only -q` | The same five tests collected in 0.11s. |
+| `uv run --locked pytest -q src/chathat/core/tests` | 5 passed in 0.12s. |
+| `uv run --locked pytest -q` | 5 passed in 0.13s. |
+| `curl -i http://127.0.0.1:8000/health` | HTTP 200 from Uvicorn with `application/json` and `{"status":"ok"}`. |
+
+The evidence verifies discovery from the repository root and core feature directory, the five existing behavior contracts, and the running application's health endpoint. The supplied excerpt contains the HTTP response alongside the user's confirmation that the previous step is complete.
+
+Next is **P01-I02 — Dockerfile and development Compose foundation**.

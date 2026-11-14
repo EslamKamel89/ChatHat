@@ -2,7 +2,7 @@
 
 > **Source of truth:** [Implementation plan](../chathat-implementation-plan.md), Phase 01.  
 > **Specification:** [ChatHat specification](../chathat-spec.md), section 24 (Docker Compose and Nginx).  
-> **Progress:** 3 / 14 lessons completed (21.4%).\
+> **Progress:** 4 / 14 lessons completed (28.6%).\
 > **Last reviewed:** 2026-11-14.
 
 ## Lesson progress
@@ -14,7 +14,7 @@ Update a row **only after** the lesson's work and verification are complete. Rec
 | P01-I01 | Implement | FastAPI package and application factory | Completed | 2026-11-10 | [Smoke check and implementation index](phase-01-notes.md#verification) | Verified HTTP 200 and 503, lifespan, and factory isolation. |
 | P01-T01 | Test | FastAPI package and application factory | Completed | 2026-11-10 | [pytest result](phase-01-notes.md#p01-t01--test-the-fastapi-package-and-application-factory) | 5 passed in 0.26s in the user's local run. |
 | P01-I07 | Implement | Organize the application foundation by feature | Completed | 2026-11-14 | [Refactor review and pytest evidence](phase-01-notes.md#p01-i07--organize-the-application-foundation-by-feature) | Core owns routes, lifecycle, and tests. Layout differences recorded in notes. |
-| P01-T07 | Test | Verify feature-local test discovery and core behavior | Not started | — | — | — |
+| P01-T07 | Test | Verify feature-local test discovery and core behavior | Completed | 2026-11-14 | [Discovery, pytest, and HTTP evidence](phase-01-notes.md#p01-t07--verify-feature-local-test-discovery-and-core-behavior) | Both suites pass all five tests. Uvicorn health returns HTTP 200. |
 | P01-I02 | Implement | Dockerfile and development Compose foundation | Not started | — | — | — |
 | P01-T02 | Test | Dockerized FastAPI and Compose configuration | Not started | — | — | — |
 | P01-I03 | Implement | Nginx Compose service and internal routing | Not started | — | — | — |
