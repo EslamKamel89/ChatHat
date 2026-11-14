@@ -46,6 +46,8 @@ For each testing lesson:
 
 Use `docs/codex-lesson-guide.md` for the response template and progress-recording protocol.
 
+Deliver lesson content directly in the discussion. Do not create files containing lesson walkthroughs. Requests to create, generate, start, or continue a lesson follow this discussion-based format.
+
 ## Architectural invariants
 
 - **Stack:** FastAPI, SQLModel, Alembic, PostgreSQL with pgvector, Jinja2/HTMX/Alpine.js/Tailwind/daisyUI, LangGraph, Celery, Redis and pytest, as specified. Do not substitute frameworks without an approved decision.

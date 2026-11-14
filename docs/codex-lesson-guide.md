@@ -2,6 +2,12 @@
 
 This guide complements the root [`AGENTS.md`](../AGENTS.md) and the authoritative [implementation plan](chathat-implementation-plan.md). It defines **how to teach**, not new product requirements.
 
+## Lesson delivery
+
+Deliver every implementation and testing lesson directly in the discussion, including its explanations, code chunks, commands, and expected results. Keep lesson content in the discussion and do not create lesson-content files or a `docs/lessons/` directory. Requests to create, generate, start, or continue a lesson use this delivery format.
+
+Repository edits for implementation and progress records follow the authorization rules in `AGENTS.md`. Record concise decisions and verified evidence in phase notes, lesson status in the tracker, and file responsibilities in the source map.
+
 ## Before every lesson
 
 - Read the latest local specification, implementation plan, relevant progress tracker and affected source/tests.

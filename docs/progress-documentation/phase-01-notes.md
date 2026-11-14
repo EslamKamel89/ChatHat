@@ -4,7 +4,7 @@ This is the source of truth for Phase 01 lesson decisions, deviations, and verif
 
 ## P01-I01 · FastAPI package and application factory
 
-**Verified 2026-11-10.** The six implementation files and the initial notes matched the submitted diff before this update. [Original walkthrough](../lessons/phase-01-containerized-application-foundation/P01-I01-fastapi-package-and-application-factory.md)
+**Verified 2026-11-10.** The six implementation files and the initial notes matched the submitted diff before this update.
 
 ### Implementation index
 
@@ -40,7 +40,7 @@ Stop the server with Ctrl+C to observe shutdown. Repeat with `--lifespan off` fo
 
 ## P01-T01 · Test the FastAPI package and application factory
 
-**Completed 2026-11-10.** The submitted diff matches the checkout. [Lesson walkthrough](../lessons/phase-01-containerized-application-foundation/P01-T01-fastapi-package-and-application-factory.md)
+**Completed 2026-11-10.** The submitted diff matches the checkout.
 
 - [tests/test_app.py](../../tests/test_app.py) covers HTTP 200 and 503 from `/health`, HTTP 404 for an unknown route, app state isolation through startup and shutdown, and startup exception propagation.
 - [pyproject.toml](../../pyproject.toml) declares `pytest` and `httpx2` in the uv development group. [uv.lock](../../uv.lock) records their resolved versions.
