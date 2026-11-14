@@ -1,18 +1,7 @@
-from collections.abc import AsyncGenerator
-from contextlib import asynccontextmanager
-
 from fastapi import FastAPI
 
-from chathat.api.health import router as health_router
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
-    app.state.started = True
-    try:
-        yield
-    finally:
-        app.state.started = False
+from chathat.core.application.lifespan import lifespan
+from chathat.core.routes.health import router as health_router
 
 
 def create_app() -> FastAPI:

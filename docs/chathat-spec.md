@@ -1,8 +1,8 @@
 # ChatHat — Product Requirements Specification
 
-> **Document version** 0.4.0\
+> **Document version** 0.4.1\
 > **Status** Draft with decisions Q001–Q061 and feature-based source organization incorporated\
-> **Last updated** 2026-11-11\
+> **Last updated** 2026-11-14\
 > **Repository (code SSOT):** https://github.com/EslamKamel89/ChatHat  
 > **Document role:** Product and behavioral requirements; not evidence that features are implemented.
 
@@ -144,6 +144,48 @@ If specification and code disagree, report the discrepancy rather than silently 
 - Use `src/chathat/core/` for application-wide code such as health checks, lifespan, settings, and database session setup. Use `src/chathat/auth/` for authentication code such as sign-in, sessions, and identity dependencies when that feature is introduced.
 - Keep the application factory in `src/chathat/main.py`. It assembles the FastAPI app and registers feature routers. Feature packages own their route definitions.
 - Place each feature's pytest suite and feature-specific fixtures in `src/chathat/<feature>/tests/`. For example, the factory, lifespan, and health tests belong in `src/chathat/core/tests/`. Pytest must discover the feature suites when run from the repository root.
+
+Use plural responsibility-based subpackages within each feature. Create them as their responsibilities are implemented.
+
+| Subpackage | Responsibility |
+| --- | --- |
+| `routes/` | HTTP handlers and feature routers |
+| `schemas/` | Request and response contracts |
+| `models/` | Database entities owned by the feature |
+| `services/` | Business workflows |
+| `dependencies/` | FastAPI dependency providers |
+| `tests/` | Feature tests and fixtures, including `conftest.py` when needed |
+
+The approved authentication layout is the following target structure for the authentication lessons.
+
+```text
+src/chathat/auth/
+├── __init__.py
+├── routes/
+│   ├── __init__.py
+│   ├── sessions.py
+│   └── oauth.py
+├── schemas/
+│   ├── __init__.py
+│   └── sessions.py
+├── models/
+│   ├── __init__.py
+│   └── users.py
+├── services/
+│   ├── __init__.py
+│   └── authentication.py
+├── dependencies/
+│   ├── __init__.py
+│   └── identity.py
+└── tests/
+    ├── __init__.py
+    ├── conftest.py
+    ├── test_sessions.py
+    └── test_oauth.py
+```
+
+Apply the same convention to core by placing the health router in `core/routes/health.py` and `HealthResponse` in `core/schemas/health.py`. Keep application lifespan in `core/lifespan.py` and its tests in `core/tests/`.
+
 
 ---
 
@@ -727,6 +769,7 @@ The following are not confirmed MVP commitments:
 | 2026-11-08 | Document upload and configurable business rules     | CONFIRMED | Detailed policies open                             |
 | 2026-11-08 | Inspect retrieved context for each answer           | CONFIRMED | Trace schema proposed                              |
 | 2026-11-08 | International SaaS billing                          | CONFIRMED | Provider and pricing OPEN                          |
+| 2026-11-14 | Feature responsibility subpackages | CONFIRMED | Approved routes, schemas, models, services, dependencies, and feature tests. |
 | 2026-11-11 | Feature-based source organization (TECH-014)       | CONFIRMED | Each feature owns its code and pytest suite.        |
 
 ---
@@ -870,6 +913,7 @@ This register uses the **interactive Q&A numbering**, which differs from the ori
 | ---------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | 2026-11-08 | 0.2.0   | Reconciled confirmed interactive decisions Q001–Q055 across requirement definitions, memory lifecycle, deferred features and decision register.                                |
 | 2026-11-08 | 0.3.0   | Incorporated Q056–Q061: shared-table tenancy, canonical embeddings, checkpoint-authoritative full history, monthly AI credits, manual test plans and paid-launch payment gate. |
+| 2026-11-14 | 0.4.1 | Recorded the approved feature subpackages and authentication target layout. |
 | 2026-11-11 | 0.4.0   | Added TECH-014 for feature packages that own their code and pytest suites. |
 
 ---

@@ -2,7 +2,7 @@
 
 Move the existing application foundation into `core/`, including its tests. This implements TECH-014 and prepares the package structure for upcoming features such as authentication.
 
-P01-I01 and P01-T01 are recorded as complete. The checkout currently has health in `src/chathat/api/health.py`, lifespan in `src/chathat/main.py`, and five tests in `tests/test_app.py`. The root README still describes a documentation-only project. The source and progress tracker show the implemented foundation. [Specification §2.2](../../chathat-spec.md#22-feature-packages) · [Implementation plan](../../chathat-implementation-plan.md#p01-i07--implement-organize-the-application-foundation-by-feature) · [Progress tracker](../../progress-documentation/phase_1.md)
+P01-I01 and P01-T01 are recorded as complete. The refactor in the current checkout already has `core/health.py`, `core/lifespan.py`, and `core/tests/test_app.py`. Follow the steps that apply to your checkout to adopt the approved responsibility subpackages. [Specification §2.2](../../chathat-spec.md#22-feature-packages) · [Implementation plan](../../chathat-implementation-plan.md#p01-i07--implement-organize-the-application-foundation-by-feature) · [Progress tracker](../../progress-documentation/phase_1.md)
 
 ## Contract
 
@@ -21,13 +21,46 @@ This refactor changes module paths. Application state still belongs to each app 
 Run from the repository root.
 
 ```sh
-mkdir -p src/chathat/core/tests
-touch src/chathat/core/__init__.py src/chathat/core/tests/__init__.py
-mv src/chathat/api/health.py src/chathat/core/health.py
-mv tests/test_app.py src/chathat/core/tests/test_app.py
+mkdir -p src/chathat/core/routes src/chathat/core/schemas src/chathat/core/tests
+touch src/chathat/core/__init__.py src/chathat/core/routes/__init__.py src/chathat/core/schemas/__init__.py src/chathat/core/tests/__init__.py
 ```
 
-The health module moves with its router and response schema. Its handler continues to read `request.app.state.started` from the app handling the request. The tests retain their fixture and five assertions-based test cases.
+Move the existing health module to `src/chathat/core/routes/health.py`. Use its current location as the source, either `core/health.py` for the partial refactor or `api/health.py` for the original layout. Move `tests/test_app.py` into `core/tests/` if it is still at the repository root.
+
+Create `src/chathat/core/schemas/health.py`.
+
+```python
+from typing import Literal
+
+from pydantic import BaseModel
+
+
+class HealthResponse(BaseModel):
+    status: Literal["ok"]
+```
+
+In `core/routes/health.py`, remove the local `HealthResponse` class and its `Literal` and `BaseModel` imports. Import the schema from its new module. The complete router becomes the following.
+
+```python
+from fastapi import APIRouter, HTTPException, Request
+
+from chathat.core.schemas.health import HealthResponse
+
+router = APIRouter()
+
+
+@router.get(
+    "/health",
+    response_model=HealthResponse,
+    responses={503: {"description": "Application unavailable"}},
+)
+async def health(request: Request) -> HealthResponse:
+    if not getattr(request.app.state, "started", False):
+        raise HTTPException(status_code=503, detail="Application unavailable")
+    return HealthResponse(status="ok")
+```
+
+The route owns HTTP handling, and the schema owns the response contract. The handler reads startup state from the application handling the request.
 
 The empty `__init__.py` files establish regular Python packages. Giving each feature's test directory a package identity also supports distinct test module paths as more features gain a `test_app.py` or other repeated filename.
 
@@ -60,7 +93,7 @@ Replace the imports and local lifespan definition in `src/chathat/main.py`. Afte
 ```python
 from fastapi import FastAPI
 
-from chathat.core.health import router as health_router
+from chathat.core.routes.health import router as health_router
 from chathat.core.lifespan import lifespan
 
 
@@ -82,7 +115,7 @@ Read the startup failure test in `src/chathat/core/tests/test_app.py`. It import
 
 ## 4. Remove the old package marker
 
-After checking that `src/chathat/api/__init__.py` is empty and the health module has moved, delete that empty file in your editor. Check the source for imports of the old package.
+If `src/chathat/api/__init__.py` still exists, check that it is empty and delete it after moving the health module. Check the source for imports of the old package.
 
 ```sh
 rg -n 'chathat\.api' src/chathat
@@ -99,8 +132,13 @@ src/chathat/
 ├── main.py
 └── core/
     ├── __init__.py
-    ├── health.py
     ├── lifespan.py
+    ├── routes/
+    │   ├── __init__.py
+    │   └── health.py
+    ├── schemas/
+    │   ├── __init__.py
+    │   └── health.py
     └── tests/
         ├── __init__.py
         └── test_app.py
@@ -124,7 +162,7 @@ Expect successful startup and HTTP 200 with `{"status":"ok"}`. Stop Uvicorn with
 
 ## Review and paired testing
 
-The affected files are the moved health module, extracted lifespan module, updated factory imports, moved test suite, two new core package markers, and removed API package marker. The HTTP response contract and application instance lifecycle are the acceptance boundaries.
+The affected files are the moved health module, extracted lifespan module, updated factory imports, moved test suite, core, routes, schemas, and tests package markers, and removed API package marker. The HTTP response contract and application instance lifecycle are the acceptance boundaries.
 
 Next is **P01-T07 — Verify feature-local test discovery and core behavior**. It runs both commands below and checks that each collects and passes the same five tests.
 

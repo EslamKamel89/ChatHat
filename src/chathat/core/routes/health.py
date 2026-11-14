@@ -1,13 +1,8 @@
-from typing import Literal
-
 from fastapi import APIRouter, HTTPException, Request
-from pydantic import BaseModel
+
+from chathat.core.schemas.health import HealthResponse
 
 router = APIRouter()
-
-
-class HealthResponse(BaseModel):
-    status: Literal["ok"]
 
 
 @router.get(

@@ -47,4 +47,22 @@ Stop the server with Ctrl+C to observe shutdown. Repeat with `--lifespan off` fo
 
 The user's `pytest` run from the repository root collected five tests and reported **5 passed in 0.26s** on macOS with Python 3.12.7 and pytest 9.2.0.
 
-Next is **P01-I02 — Dockerfile and development Compose foundation**.
+## P01-I07 · Organize the application foundation by feature
+
+**Completed 2026-11-14.** Reviewed the working-tree refactor and recorded the user's repository-root `pytest` output. It collected the five tests from `src/chathat/core/tests/test_app.py` and reported **5 passed in 0.20s**, using Python 3.12.7 and pytest 9.2.0 on macOS.
+
+| File | Reviewed change |
+| --- | --- |
+| [core/routes/health.py](../../src/chathat/core/routes/health.py) | Moved the original health router and response schema together. |
+| [core/application/lifespan.py](../../src/chathat/core/application/lifespan.py) | Extracted the existing startup and shutdown implementation. |
+| [main.py](../../src/chathat/main.py) | Imports the core router and lifespan while keeping `create_app()` as the entry point. |
+| [core/tests/test_app.py](../../src/chathat/core/tests/test_app.py) | Moved all five tests without changing their contents. The startup failure test still patches `main.lifespan`, the name resolved by the factory. |
+| [core/application/README.md](../../src/chathat/core/application/README.md) | Describes application setup responsibilities. |
+
+The original API source package and root test file were removed. The historical P01-I01 and P01-T01 entries above describe their original locations.
+
+The initial refactor kept `HealthResponse` in the health route module and placed lifespan under `core/application/`. On 2026-11-14, moved `HealthResponse` to [core/schemas/health.py](../../src/chathat/core/schemas/health.py) and updated the route import to follow specification §2.2. Lifespan remains in `core/application/lifespan.py`, which differs from the specification and plan's `core/lifespan.py` path.
+
+After extracting the schema, ran `.venv/bin/python -m pytest -q src/chathat/core/tests` and observed **5 passed in 0.21s**.
+
+Next is **P01-T07 — Verify feature-local test discovery and core behavior**. The supplied output verifies repository-root discovery, and the schema extraction check verifies the focused feature suite. The installed Uvicorn entry-point demonstration remains pending.

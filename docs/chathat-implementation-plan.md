@@ -1,7 +1,7 @@
 # ChatHat — Implementation Curriculum and Phase Plan
 
 > **Status:** Proposed implementation curriculum; implementation progress is tracked separately.  
-> **Baseline** `docs/chathat-spec.md` v0.4.0, including TECH-014, Q001–Q061, and INFRA-001–INFRA-006.\
+> **Baseline** `docs/chathat-spec.md` v0.4.1, including TECH-014, Q001–Q061, and INFRA-001–INFRA-006.\
 > **Repository:** https://github.com/EslamKamel89/ChatHat  
 > **Created:** 2026-11-08  
 > **Repository inspection:** On 2026-11-08, the repository contained documentation including `docs/chathat-spec.md` and `docs/chathat-implementation-plan.md`; no application code was present in the inspected tree.
@@ -20,7 +20,7 @@ Each **testing lesson** must include: the contract from the previous lesson; pyt
 
 **Non-negotiable architecture:** Shared PostgreSQL tables with strict tenant isolation (Q056); canonical document embeddings across KBs (Q057); complete original messages in authoritative LangGraph checkpoint state with derived context and transcripts (Q058/Q061); monthly AI credits with atomic reservations and measured settlement (Q059); manual plan provisioning before paid launch, payment integration before charging customers (Q060). Keep separate trace/evidence snapshots as required by the spec, without creating a second authoritative conversation transcript.
 
-**Feature packages (TECH-014)** — Keep routes, schemas, models, services, dependencies, and other feature-specific code under `src/chathat/<feature>/`. Keep feature tests and fixtures in that package's `tests/` directory. The factory in `src/chathat/main.py` assembles the app and registers feature routers. [Specification §2.2](chathat-spec.md#22-feature-packages)
+**Feature packages (TECH-014)** — Use plural responsibility subpackages such as `routes/`, `schemas/`, `models/`, `services/`, and `dependencies/` as they are needed. Keep routes, schemas, models, services, dependencies, and other feature-specific code under `src/chathat/<feature>/`. Keep feature tests and fixtures in that package's `tests/` directory. The factory in `src/chathat/main.py` assembles the app and registers feature routers. [Specification §2.2](chathat-spec.md#22-feature-packages)
 
 **Scope gates, not extra questionnaires:** Before implementing provider-specific integrations, select a compatible provider and validate contracts. Before production release, resolve payment eligibility, data protection, retention, operational budgets and measurable release thresholds. These do not block planning or the early phases.
 
@@ -60,7 +60,7 @@ Use pytest with `TestClient` or `httpx.AsyncClient`/`ASGITransport` and an expli
 
 This pair runs after P01-T01 and before P01-I02. It uses new IDs so the original lesson references stay valid.
 
-Move the health router and its response schema to `src/chathat/core/health.py`, lifespan to `src/chathat/core/lifespan.py`, and the existing app tests to `src/chathat/core/tests/test_app.py`. Adjust imports and remove the empty top-level API package after its health module moves. Keep `chathat.main:create_app` as the installed entry point and preserve the health and lifespan contracts. Update the source map when the refactor is verified.
+Move the health router to `src/chathat/core/routes/health.py` and its response schema to `src/chathat/core/schemas/health.py`, lifespan to `src/chathat/core/lifespan.py`, and the existing app tests to `src/chathat/core/tests/test_app.py`. Adjust imports and remove the empty top-level API package after its health module moves. Keep `chathat.main:create_app` as the installed entry point and preserve the health and lifespan contracts. Update the source map when the refactor is verified.
 
 ### P01-T07 — Test: Verify feature-local test discovery and core behavior
 
