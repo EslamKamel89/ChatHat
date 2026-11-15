@@ -97,4 +97,16 @@ The submitted command `docker compose -f compose.yaml -f compose.dev.yaml exec a
 
 The Dockerfile lives under `dockerfiles/`, and the service uses Compose's default network in place of the walkthrough's explicit `backend` network. Compose still scopes that network to the project. The console excerpt verifies pytest and shutdown. Health-check and reload configuration were inspected in source, with runtime completion reported by the user.
 
-Next is **P01-T02 — Dockerized FastAPI and Compose configuration**, which adds pytest coverage for the container and Compose contracts.
+## P01-T02 · Implementation and verification
+
+**Verified 2026-11-15.** Added [test_container.py](../../src/chathat/core/tests/test_container.py) with three tests covering the Compose source configuration, real Uvicorn health response, and non-root Python environment with installed dependencies. PyYAML is a locked development dependency. The image includes both Compose files so the fixture reads them automatically.
+
+The standard command is `pytest` inside the running API container, after normal development startup. No test-specific environment variables or generated configuration files are required.
+
+Built and started the service with `docker compose -f compose.yaml -f compose.dev.yaml up --build -d --wait`. Ran `docker compose -f compose.yaml -f compose.dev.yaml exec -T api pytest` and observed **8 passed in 1.20s**. Restarted and recreated the service, waited for health, and repeated the same pytest command with **8 passed in 1.38s**.
+
+Also validated the rendered Compose JSON for reload, loopback port binding, and the read-only source mount. This was a separate review check. The pytest configuration test reads the two YAML source files and does not exercise Compose's merge engine. Runtime reload after editing source was not checked in this run.
+
+**Completed 2026-11-15.** Reviewed the current diff and recorded the user's confirmation that all tests passed. The implementation includes three container checks alongside the five existing application tests. The Dockerfile copies the Compose files into `/app`, and `pyproject.toml` plus `uv.lock` include PyYAML. Completion uses the user's test confirmation and the verification evidence recorded above.
+
+Next is **P01-I03 — Nginx Compose service and internal routing**.

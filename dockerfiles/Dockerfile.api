@@ -20,6 +20,7 @@ USER chathat
 RUN uv sync --locked --group dev --no-install-project --no-cache
 
 COPY --chown=chathat:chathat README.md ./
+COPY --chown=chathat:chathat compose.yaml compose.dev.yaml ./
 COPY --chown=chathat:chathat src ./src
 
 RUN uv sync --locked --group dev --no-cache
