@@ -30,7 +30,11 @@ def test_development_compose_contract(compose_files: tuple[dict, dict]) -> None:
     assert "--factory" in command
     assert "--reload" in command
 
-    assert dev_api["ports"] == ["127.0.0.1:${CHATHAT_DEV_PORT:-8000}:8000"]
+    assert not api.get("ports")
+    assert not dev_api.get("ports")
+    assert development["services"]["nginx"]["ports"] == [
+        "127.0.0.1:${CHATHAT_DEV_PORT:-8000}:80"
+    ]
     assert dev_api["volumes"] == ["./src:/app/src:ro"]
 
     health_command = api["healthcheck"]["test"]

@@ -10,10 +10,15 @@ services:
       - 0.0.0.0
       - --port
       - "8000"
+      - --proxy-headers
+      - --forwarded-allow-ips
+      - "172.30.0.10"
       - --reload
       - --reload-dir
       - /app/src
-    ports:
-      - "127.0.0.1:${CHATHAT_DEV_PORT:-8000}:8000"
     volumes:
       - ./src:/app/src:ro
+
+  nginx:
+    ports:
+      - "127.0.0.1:${CHATHAT_DEV_PORT:-8000}:80"

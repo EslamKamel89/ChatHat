@@ -2,7 +2,7 @@
 
 > **Source of truth:** [Implementation plan](../chathat-implementation-plan.md), Phase 01.  
 > **Specification:** [ChatHat specification](../chathat-spec.md), section 24 (Docker Compose and Nginx).  
-> **Progress:** 6 / 14 lessons completed (42.9%).\
+> **Progress:** 7 / 14 lessons completed (50.0%).\
 > **Last reviewed:** 2026-11-15.
 
 ## Lesson progress
@@ -17,7 +17,7 @@ Update a row **only after** the lesson's work and verification are complete. Rec
 | P01-T07 | Test | Verify feature-local test discovery and core behavior | Completed | 2026-11-14 | [Discovery, pytest, and HTTP evidence](phase-01-notes.md#p01-t07--verify-feature-local-test-discovery-and-core-behavior) | Both suites pass all five tests. Uvicorn health returns HTTP 200. |
 | P01-I02 | Implement | Dockerfile and development Compose foundation | Completed | 2026-11-15 | [Container implementation and pytest evidence](phase-01-notes.md#p01-i02--dockerfile-and-development-compose-foundation) | Five tests pass inside the API container. Uses Compose default network. |
 | P01-T02 | Test | Dockerized FastAPI and Compose configuration | Completed | 2026-11-15 | [Container test evidence](phase-01-notes.md#p01-t02--implementation-and-verification) | Eight tests pass with standard container pytest. Source YAML coverage and review checks recorded. |
-| P01-I03 | Implement | Nginx Compose service and internal routing | Not started | — | — | — |
+| P01-I03 | Implement | Nginx Compose service and internal routing | Completed | 2026-11-15 | [Diff review and supplied runtime evidence](phase-01-notes.md#p01-i03--nginx-compose-service-and-internal-routing) | Nginx health/static/404 routing verified; eight regression tests pass. Dedicated proxy tests follow in P01-T03. |
 | P01-T03 | Test | Nginx proxy and network isolation | Not started | — | — | — |
 | P01-I04 | Implement | Typed settings and environment boundaries | Not started | — | — | — |
 | P01-T04 | Test | Configuration and secret safety | Not started | — | — | — |
@@ -38,7 +38,7 @@ Update a row **only after** the lesson's work and verification are complete. Rec
 
 ## Phase exit checklist
 
-- [ ] Nginx routes requests to FastAPI through Docker Compose.
+- [x] Nginx routes requests to FastAPI through Docker Compose.
 - [ ] Development FastAPI source changes reload inside its container.
 - [ ] PostgreSQL/pgvector persists data and passes migrations.
 - [ ] Isolated pytest runs inside containers without touching development or production databases.

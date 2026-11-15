@@ -110,3 +110,35 @@ Also validated the rendered Compose JSON for reload, loopback port binding, and 
 **Completed 2026-11-15.** Reviewed the current diff and recorded the user's confirmation that all tests passed. The implementation includes three container checks alongside the five existing application tests. The Dockerfile copies the Compose files into `/app`, and `pyproject.toml` plus `uv.lock` include PyYAML. Completion uses the user's test confirmation and the verification evidence recorded above.
 
 Next is **P01-I03 — Nginx Compose service and internal routing**.
+
+
+## P01-I03 · Nginx Compose service and internal routing
+
+**Completed 2026-11-15.** Reviewed the current working-tree diff and both new files under `nginx/` against P01-I03 and INFRA-006. No blocking implementation issues were found. Runtime evidence below was supplied by the user; commands were not rerun during this documentation update.
+
+| File | Reviewed implementation |
+| --- | --- |
+| [compose.yaml](../../compose.yaml) | Adds `nginx:1.28-alpine`, API-health startup dependency, read-only configuration/static mounts, and a health check through Nginx to FastAPI. Configures the default network as `172.30.0.0/24` with Nginx at `172.30.0.10`. |
+| [compose.dev.yaml](../../compose.dev.yaml) | Moves the loopback host-port publication from API port 8000 to Nginx port 80. Preserves API reload and the read-only source mount; enables proxy headers trusted only from `172.30.0.10`. |
+| [dockerfiles/Dockerfile.api](../../dockerfiles/Dockerfile.api) | Adds the same explicit proxy-header trust to the default Uvicorn command. |
+| [nginx/default.conf](../../nginx/default.conf) | Routes to `api:8000` using Docker DNS and dynamic upstream resolution; serves `/static/` directly; replaces forwarding headers; sets a 10 MiB body ceiling, 5-second connect timeout, 75-second read/send timeouts, and disables proxy response buffering/cache. |
+| [nginx/static/site.css](../../nginx/static/site.css) | Supplies the initial public static asset. |
+| [core/tests/test_container.py](../../src/chathat/core/tests/test_container.py) | Updates the existing Compose source assertion for Nginx port publication and absence of API port publication. The runtime API-health test still addresses Uvicorn directly. |
+
+### Supplied verification evidence
+
+| Command | User-supplied result |
+| --- | --- |
+| `docker compose -f compose.yaml -f compose.dev.yaml exec api python -m pytest` | **8 passed in 1.19s**, Python 3.12.7 and pytest 9.2.0 on Linux; five application tests and three container tests. |
+| `docker ps` and `docker compose -f compose.yaml -f compose.dev.yaml ps` | Both API and Nginx healthy. Only Nginx publishes `127.0.0.1:8000->80/tcp`; API shows `8000/tcp` without a host mapping. |
+| `curl -i http://127.0.0.1:8000/health` | HTTP 200, `application/json`, `{"status":"ok"}`, served through Nginx 1.28.3. |
+| `curl -i http://127.0.0.1:8000/static/site.css` | HTTP 200, `text/css`, expected CSS contents. |
+| `curl -i http://127.0.0.1:8000/missing` | HTTP 404, `application/json`, `{"detail":"Not Found"}` through Nginx. |
+
+### Decisions and verification boundaries
+
+- Nginx's fixed address and both Uvicorn trust settings must remain aligned. The chosen subnet must not overlap other Docker networks or host/VPN routes.
+- The 10 MiB request-body ceiling is provisional infrastructure configuration, not a finalized document-upload policy. Buffering is disabled for all proxied responses at this stage.
+- The supplied pytest run verifies the existing regression suite; the manual HTTP checks verify the Nginx ingress. Header spoofing/trusted forwarding, oversized-body rejection, progressive SSE delivery, and recovery after upstream address changes were not exercised by this evidence.
+- Compose source assertions do not exercise Compose's merge engine. No production override or database exists yet, so production/database exposure remains future verification work. TLS and production hardening remain Phase 12 work.
+- P01-T03 remains **Not started**. It is the immediate next lesson; do not advance to P01-I04 before its required tests pass. Tests must continue to prepare their inputs automatically and run with plain `pytest` inside the normally started API container.
