@@ -11,7 +11,7 @@ Read the relevant parts of these files **from the current checkout** before prop
 3. `docs/chathat-implementation-plan.md` — phase sequence, lesson IDs, dependencies, teaching and testing contracts.
 4. `docs/progress-documentation/phase_1.md` — Phase 01 progress (and the corresponding `phase_N.md` when it exists).
 5. The current phase's lesson notes, when available. See [Phase 01 notes](docs/progress-documentation/phase-01-notes.md) and use `docs/progress-documentation/phase-*-notes.md` to find the corresponding file for future phases.
-6. [`src/chathat/README.md`](src/chathat/README.md) — compact source map. Use it to find the entry points and files relevant to the task before opening source files.
+6. [`CODEBASE_MAP.json`](CODEBASE_MAP.json) — repository navigation index. Search paths and responsibility summaries, retrieve only relevant entries and symbol details, then inspect actual source. Do not read the entire map by default; source remains authoritative.
 
 Inspect the actual repository tree and relevant source files. Do not assume files, commands, services, or implementation status exist because they appear in the plan. When documentation conflicts, explain the conflict before proceeding. The specification controls product requirements; the implementation plan controls lesson order; actual source and test results control what is implemented. An unchecked lesson is not proof that code is absent, and a checked lesson is not proof tests currently pass.
 
@@ -75,6 +75,15 @@ After a lesson is **verified**, propose an update to its row in `docs/progress-d
 
 Use the tracker for lesson status and the corresponding phase notes for implementation decisions, deviations, and detailed verification evidence. When authorized to update progress documentation, link to the relevant notes entry from the tracker's evidence column.
 
-After each verified implementation or testing lesson, refresh [`src/chathat/README.md`](src/chathat/README.md) with the latest completed lesson and any added, moved, removed, or repurposed files. Keep entries short and focused on file responsibilities and entry points. Link to phase notes for decisions and verification details.
+Keep lesson status, dates, decisions, and verification evidence in the tracker and phase notes. Keep navigation responsibilities and declarations in [`CODEBASE_MAP.json`](CODEBASE_MAP.json); do not put progress or test results in the index.
 
 If the user asks for a lesson, begin with the next requested lesson (or ask which lesson only if genuinely ambiguous). If the user asks for an implementation plan, follow the existing plan rather than inventing a parallel curriculum.
+
+
+## Repository navigation index
+
+- After every authorized codebase change, assess `CODEBASE_MAP.json`: add relevant new files (including untracked additions), update changed responsibilities/declarations, rename moved paths, and remove deleted or newly excluded files. Leave unaffected entries and formatting intact; make no map change when indexed information is unchanged.
+- During read-only review, report stale entries without editing. During instruction generation, include maintenance instructions in the requested artifact without applying them. Index maintenance does not authorize application or unrelated documentation edits.
+- Use a flat JSON object keyed by exact, forward-slash repository-relative file paths, each mapping to a metadata object with a concise factual summary. For Python, record module namespaces, useful top-level function signatures, async/decorator metadata, class bases, and declared properties. Preserve declared types and parameter order/kinds/defaults; do not infer missing annotations. Extend consistently for other languages when introduced.
+- Inspect actual source using targeted discovery and syntax-aware parsing without executing application files. Respect `.gitignore`; omit third-party dependencies, generated outputs, caches, logs, populated environment files, credentials, bodies, import lists, empty metadata, and speculative claims. Summaries suffice for configuration files. Do not recursively index documentation or lesson guides.
+- Validate JSON with duplicate-key detection, normalized unique paths, file existence, metadata objects, declaration accuracy, scope exclusions, and absence of sensitive content. Do not add timestamps, implementation status, test results, or completion claims to the map.

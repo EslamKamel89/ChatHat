@@ -1,0 +1,237 @@
+{
+  ".dockerignore": {
+    "summary": "Excludes local dependencies, secrets, caches, and runtime data from Docker build contexts."
+  },
+  ".env.example": {
+    "summary": "Safe example of the development HTTP host-port setting."
+  },
+  ".gitignore": {
+    "summary": "Excludes dependencies, generated artifacts, local configuration, secrets, and runtime data from Git."
+  },
+  "AGENTS.md": {
+    "summary": "Repository instructions for guided lessons, architecture, safe execution, and navigation-index maintenance."
+  },
+  "README.md": {
+    "summary": "Project overview and links to the product specification, implementation plan, and progress tracker."
+  },
+  "commands.txt": {
+    "summary": "Development Compose startup, containerized pytest, and shutdown commands."
+  },
+  "compose.dev.yaml": {
+    "summary": "Development Uvicorn reload, source bind mount, trusted proxy address, and Nginx-only loopback host-port publication."
+  },
+  "compose.yaml": {
+    "summary": "API and Nginx service definitions, health checks, read-only proxy assets, and network addressing for proxy trust."
+  },
+  "dockerfiles/Dockerfile.api": {
+    "summary": "Builds the non-root Python API image with locked development dependencies and the Uvicorn application-factory command."
+  },
+  "nginx/default.conf": {
+    "summary": "Resolves the API upstream through Docker DNS, proxies HTTP with replaced forwarding headers, serves static assets, and configures body limits and streaming timeouts."
+  },
+  "nginx/static/site.css": {
+    "summary": "Public stylesheet declaring support for light and dark color schemes."
+  },
+  "pyproject.toml": {
+    "summary": "Python package metadata, uv_build configuration, and runtime/development dependency declarations."
+  },
+  "src/chathat/__init__.py": {
+    "summary": "Marks the chathat application package.",
+    "namespace": "chathat"
+  },
+  "src/chathat/core/__init__.py": {
+    "summary": "Marks the shared application-core package.",
+    "namespace": "chathat.core"
+  },
+  "src/chathat/core/application/lifespan.py": {
+    "summary": "Async application lifespan setting the startup flag and clearing it during shutdown.",
+    "namespace": "chathat.core.application.lifespan",
+    "functions": [
+      {
+        "name": "lifespan",
+        "summary": "Sets app.state.started on entry and clears it in a finally block.",
+        "async": true,
+        "parameters": [
+          {
+            "name": "app",
+            "type": "FastAPI"
+          }
+        ],
+        "returns": "AsyncGenerator[None]",
+        "decorators": [
+          "asynccontextmanager"
+        ]
+      }
+    ]
+  },
+  "src/chathat/core/routes/health.py": {
+    "summary": "GET /health route returning the typed healthy response or HTTP 503 when the startup flag is unset.",
+    "namespace": "chathat.core.routes.health",
+    "functions": [
+      {
+        "name": "health",
+        "summary": "Checks the application startup flag and returns HealthResponse or raises HTTPException with status 503.",
+        "async": true,
+        "parameters": [
+          {
+            "name": "request",
+            "type": "Request"
+          }
+        ],
+        "returns": "HealthResponse"
+      }
+    ],
+    "routes": [
+      {
+        "method": "GET",
+        "path": "/health",
+        "handler": "health",
+        "response_model": "HealthResponse"
+      }
+    ]
+  },
+  "src/chathat/core/schemas/__init__.py": {
+    "summary": "Marks the core response-schema package.",
+    "namespace": "chathat.core.schemas"
+  },
+  "src/chathat/core/schemas/health.py": {
+    "summary": "Pydantic response schema restricting health status to the literal ok.",
+    "namespace": "chathat.core.schemas.health",
+    "classes": [
+      {
+        "name": "HealthResponse",
+        "kind": "class",
+        "bases": [
+          "BaseModel"
+        ],
+        "properties": [
+          {
+            "name": "status",
+            "type": "Literal['ok']"
+          }
+        ]
+      }
+    ]
+  },
+  "src/chathat/core/tests/__init__.py": {
+    "summary": "Marks the feature-local core test package.",
+    "namespace": "chathat.core.tests"
+  },
+  "src/chathat/core/tests/test_app.py": {
+    "summary": "In-process tests for health, missing routes, startup failures, lifespan cleanup, and application-state isolation.",
+    "namespace": "chathat.core.tests.test_app",
+    "functions": [
+      {
+        "name": "app",
+        "summary": "Provides a fresh application instance to each test.",
+        "decorators": [
+          "pytest.fixture"
+        ]
+      },
+      {
+        "name": "test_health_returns_ok_after_startup",
+        "summary": "Checks the successful health response and JSON content type during lifespan.",
+        "parameters": [
+          {
+            "name": "app",
+            "type": "FastAPI"
+          }
+        ],
+        "returns": "None"
+      },
+      {
+        "name": "test_unregistered_path_returns_404",
+        "summary": "Checks unknown-route behavior.",
+        "parameters": [
+          {
+            "name": "app",
+            "type": "FastAPI"
+          }
+        ],
+        "returns": "None"
+      },
+      {
+        "name": "test_health_returns_unavailable_without_startup",
+        "summary": "Checks health returns HTTP 503 without lifespan startup.",
+        "parameters": [
+          {
+            "name": "app",
+            "type": "FastAPI"
+          }
+        ],
+        "returns": "None"
+      },
+      {
+        "name": "test_lifespan_changes_only_its_own_app",
+        "summary": "Checks separate factory instances and startup/shutdown state isolation.",
+        "parameters": [
+          {
+            "name": "app",
+            "type": "FastAPI"
+          }
+        ],
+        "returns": "None"
+      },
+      {
+        "name": "test_startup_error_propagates",
+        "summary": "Checks that a failing lifespan prevents successful client startup.",
+        "parameters": [
+          {
+            "name": "monkeypatch",
+            "type": "pytest.MonkeyPatch"
+          }
+        ],
+        "returns": "None"
+      }
+    ]
+  },
+  "src/chathat/core/tests/test_container.py": {
+    "summary": "Container tests for Compose source configuration, running Uvicorn health, and the non-root Python environment.",
+    "namespace": "chathat.core.tests.test_container",
+    "functions": [
+      {
+        "name": "compose_files",
+        "summary": "Loads base and development Compose YAML from /app.",
+        "returns": "tuple[dict, dict]",
+        "decorators": [
+          "pytest.fixture"
+        ]
+      },
+      {
+        "name": "test_development_compose_contract",
+        "summary": "Checks source YAML for the API build, reload, mounts, health command, and Nginx-only port publication.",
+        "parameters": [
+          {
+            "name": "compose_files",
+            "type": "tuple[dict, dict]"
+          }
+        ],
+        "returns": "None"
+      },
+      {
+        "name": "test_running_api_health",
+        "summary": "Checks the live Uvicorn health endpoint over container loopback HTTP.",
+        "returns": "None"
+      },
+      {
+        "name": "test_container_environment",
+        "summary": "Checks non-root execution, the virtual environment, dependency imports, and factory availability.",
+        "returns": "None"
+      }
+    ]
+  },
+  "src/chathat/main.py": {
+    "summary": "Application factory wiring the core lifespan and health router into each FastAPI instance.",
+    "namespace": "chathat.main",
+    "functions": [
+      {
+        "name": "create_app",
+        "summary": "Creates a FastAPI instance with the core lifespan and health router.",
+        "returns": "FastAPI"
+      }
+    ]
+  },
+  "uv.lock": {
+    "summary": "Resolved Python dependency versions, distribution metadata, and integrity hashes for locked installation."
+  }
+}

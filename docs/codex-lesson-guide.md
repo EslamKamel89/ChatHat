@@ -6,7 +6,7 @@ This guide complements the root [`AGENTS.md`](../AGENTS.md) and the authoritativ
 
 Deliver every implementation and testing lesson directly in the discussion, including its explanations, code chunks, commands, and expected results. Keep lesson content in the discussion and do not create lesson-content files or a `docs/lessons/` directory. Requests to create, generate, start, or continue a lesson use this delivery format.
 
-Repository edits for implementation and progress records follow the authorization rules in `AGENTS.md`. Record concise decisions and verified evidence in phase notes, lesson status in the tracker, and file responsibilities in the source map.
+Repository edits for implementation and progress records follow the authorization rules in `AGENTS.md`. Record concise decisions and verified evidence in phase notes, lesson status in the tracker, and file responsibilities and useful declarations in [`CODEBASE_MAP.json`](../CODEBASE_MAP.json). Search relevant entries rather than reading the entire index; verify actual source and assess affected entries after authorized code changes. Keep progress and verification evidence out of the index.
 
 ## Before every lesson
 

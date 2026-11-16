@@ -21,6 +21,7 @@
 
 | Document | Purpose |
 | --- | --- |
+| [Repository navigation index](CODEBASE_MAP.json) | File responsibilities and declared symbols. Search relevant entries, then inspect source; maintenance rules are in `AGENTS.md`. |
 | [Product specification](docs/chathat-spec.md) | Product requirements, architecture constraints, confirmed decisions, and acceptance criteria. **Primary reference for what ChatHat must do.** |
 | [Implementation plan](docs/chathat-implementation-plan.md) | Phased, lesson-by-lesson development curriculum. Each implementation lesson is immediately followed by a pytest lesson. |
 | [Phase 01 progress tracker](docs/progress-documentation/phase_1.md) | Lesson status, completion dates, evidence, notes, and phase exit criteria. |

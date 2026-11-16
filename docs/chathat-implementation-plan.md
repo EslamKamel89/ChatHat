@@ -62,7 +62,7 @@ Use pytest with `TestClient` or `httpx.AsyncClient`/`ASGITransport` and an expli
 
 This pair runs after P01-T01 and before P01-I02. It uses new IDs so the original lesson references stay valid.
 
-Move the health router to `src/chathat/core/routes/health.py` and its response schema to `src/chathat/core/schemas/health.py`, lifespan to `src/chathat/core/application/lifespan.py`, and the existing app tests to `src/chathat/core/tests/test_app.py`. Use `core/application/` for application-instance setup as described in its [README](../src/chathat/core/application/README.md), with `main.py` wiring those components into the factory. Adjust imports and remove the empty top-level API package after its health module moves. Keep `chathat.main:create_app` as the installed entry point and preserve the health and lifespan contracts. Update the source map when the refactor is verified.
+Move the health router to `src/chathat/core/routes/health.py` and its response schema to `src/chathat/core/schemas/health.py`, lifespan to `src/chathat/core/application/lifespan.py`, and the existing app tests to `src/chathat/core/tests/test_app.py`. Use `core/application/` for application-instance setup as described in its [README](../src/chathat/core/application/README.md), with `main.py` wiring those components into the factory. Adjust imports and remove the empty top-level API package after its health module moves. Keep `chathat.main:create_app` as the installed entry point and preserve the health and lifespan contracts. Update affected entries in [`CODEBASE_MAP.json`](../CODEBASE_MAP.json) within the authorized refactor scope; keep lesson status and verification evidence in the progress documents.
 
 ### P01-T07 — Test: Verify feature-local test discovery and core behavior
 
