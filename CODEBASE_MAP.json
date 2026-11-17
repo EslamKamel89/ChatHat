@@ -3,7 +3,7 @@
     "summary": "Excludes local dependencies, secrets, caches, and runtime data from Docker build contexts."
   },
   ".env.example": {
-    "summary": "Safe example of the development HTTP host-port setting."
+    "summary": "Safe examples of the development HTTP host port and debug setting."
   },
   ".gitignore": {
     "summary": "Excludes dependencies, generated artifacts, local configuration, secrets, and runtime data from Git."
@@ -18,7 +18,7 @@
     "summary": "Development Compose startup, containerized pytest, and shutdown commands."
   },
   "compose.dev.yaml": {
-    "summary": "Development Uvicorn reload, source bind mount, trusted proxy address, and Nginx-only loopback host-port publication."
+    "summary": "Development environment/debug settings, Uvicorn reload, source bind mount, trusted proxy address, and Nginx-only loopback host-port publication."
   },
   "compose.yaml": {
     "summary": "API and Nginx service definitions, health checks, read-only proxy assets, and network addressing for proxy trust."
@@ -61,6 +61,65 @@
         "decorators": [
           "asynccontextmanager"
         ]
+      }
+    ]
+  },
+  "src/chathat/core/application/state.py": {
+    "summary": "Typed frozen application-resource container and accessor for FastAPI application state.",
+    "namespace": "chathat.core.application.state",
+    "classes": [
+      {
+        "name": "AppState",
+        "kind": "class",
+        "decorators": [
+          "dataclass(frozen=True, slots=True)"
+        ],
+        "properties": [
+          {
+            "name": "config",
+            "type": "Config"
+          }
+        ]
+      }
+    ],
+    "functions": [
+      {
+        "name": "get_app_state",
+        "summary": "Retrieves the typed resource container stored on app.state.resources.",
+        "parameters": [
+          {
+            "name": "app",
+            "type": "FastAPI"
+          }
+        ],
+        "returns": "AppState"
+      }
+    ]
+  },
+  "src/chathat/core/dependencies/__init__.py": {
+    "summary": "Marks the core dependency-provider package.",
+    "namespace": "chathat.core.dependencies"
+  },
+  "src/chathat/core/dependencies/state.py": {
+    "summary": "FastAPI dependency provider and annotated alias for application resources.",
+    "namespace": "chathat.core.dependencies.state",
+    "functions": [
+      {
+        "name": "provide_app_state",
+        "summary": "Retrieves the requesting application resource container.",
+        "parameters": [
+          {
+            "name": "request",
+            "type": "Request"
+          }
+        ],
+        "returns": "AppState"
+      }
+    ],
+    "aliases": [
+      {
+        "name": "AppStateDependency",
+        "value": "Annotated[AppState, Depends(provide_app_state)]"
       }
     ]
   },
@@ -108,6 +167,49 @@
           {
             "name": "status",
             "type": "Literal['ok']"
+          }
+        ]
+      }
+    ]
+  },
+  "src/chathat/core/settings/config.py": {
+    "summary": "Immutable environment-backed configuration with secret exclusion and production validation.",
+    "namespace": "chathat.core.settings.config",
+    "classes": [
+      {
+        "name": "Config",
+        "kind": "class",
+        "bases": [
+          "BaseSettings"
+        ],
+        "properties": [
+          {
+            "name": "environment",
+            "type": "Literal['development', 'test', 'production']"
+          },
+          {
+            "name": "debug",
+            "type": "bool",
+            "default": "False"
+          },
+          {
+            "name": "secret_key",
+            "type": "SecretStr | None",
+            "default": "Field(default=None, exclude=True)"
+          }
+        ],
+        "methods": [
+          {
+            "name": "check_environment",
+            "parameters": [
+              {
+                "name": "self"
+              }
+            ],
+            "returns": "Self",
+            "decorators": [
+              "model_validator(mode='after')"
+            ]
           }
         ]
       }
@@ -248,13 +350,21 @@
   },
 
   "src/chathat/main.py": {
-    "summary": "Application factory wiring the core lifespan and health router into each FastAPI instance.",
+    "summary": "Application factory validating configuration and wiring typed application resources, debug mode, core lifespan, and health routing.",
     "namespace": "chathat.main",
     "functions": [
       {
         "name": "create_app",
-        "summary": "Creates a FastAPI instance with the core lifespan and health router.",
-        "returns": "FastAPI"
+        "summary": "Resolves Config, stores AppState on the application, and registers the core lifespan and health router.",
+        "returns": "FastAPI",
+        "parameters": [
+          {
+            "name": "config",
+            "kind": "keyword_only",
+            "type": "Config | None",
+            "default": "None"
+          }
+        ]
       }
     ]
   },

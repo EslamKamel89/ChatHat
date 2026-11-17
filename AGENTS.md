@@ -59,6 +59,7 @@ Deliver lesson content directly in the discussion. Do not create files containin
 
 ## Architectural invariants
 
+- **Feature directory layout:** `src/chathat/core/` and every feature root `src/chathat/<feature>/` must contain only directories, with `__init__.py` as the sole permitted direct file. Place all other files in responsibility-based subdirectories. This restriction does not apply to the application root `src/chathat/` or generated/ignored runtime artifacts.
 - **Stack:** FastAPI, SQLModel, Alembic, PostgreSQL with pgvector, Jinja2/HTMX/Alpine.js/Tailwind/daisyUI, LangGraph, Celery, Redis and pytest, as specified. Do not substitute frameworks without an approved decision.
 - **Infrastructure:** Docker Compose in development and production. Dedicated **Nginx** service is the HTTP entry point; FastAPI and data services are internal. Phase 01 introduces Dockerfile, Compose, Nginx and PostgreSQL/pgvector. Redis/Celery arrive when ingestion needs them. Production TLS, SSE proxy behavior, secrets, backups and hardening are required.
 - **Tenant security (Q056):** Shared PostgreSQL tables with mandatory organization-scoped access. Verify tenant ownership at every boundary, including documents, embeddings, chatbots, checkpoints and traces. Never trust a client-supplied organization ID as authorization.

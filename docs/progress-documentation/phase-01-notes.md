@@ -173,3 +173,24 @@ Ran `docker compose -f compose.yaml -f compose.dev.yaml exec api python -m pytes
 Phase progress is **8/14 (57.1%)**. The next lesson is **P01-I04 — Typed settings and environment boundaries**.
 
 Updated `CODEBASE_MAP.json` for the four declared test functions during the preceding authorized test changes. This progress-only update does not change indexed responsibilities or declarations, so no further map edit is needed.
+
+## P01-I04 · Typed settings and environment boundaries
+
+**Completed 2026-11-17.** Reviewed tracked changes and untracked settings, application-state, and dependency modules. The user reported completing the lesson and all demonstration checks. No blocking implementation issues were found.
+
+### Implementation and decisions
+
+- `core/settings/config.py` defines `Config(BaseSettings)` with a required development/test/production environment, boolean debug setting, and optional `SecretStr` excluded from model dumps. Configuration uses the `CHATHAT_` prefix, disables dotenv loading, prevents reassignment, and hides inputs in formatted validation errors. Production rejects debug mode, missing secrets, and secrets shorter than 32 characters; length alone does not establish entropy.
+- `main.create_app(*, config: Config | None = None)` resolves configuration before application startup, applies debug mode, and stores a frozen, slotted `AppState(config=resolved_config)` at `app.state.resources`.
+- `core/application/state.py` owns the typed resource container and accessor. `core/dependencies/state.py` exposes `provide_app_state` and `AppStateDependency`; requests retrieve the owning application's existing configuration rather than reloading it.
+- The implementation uses `Config` and an `AppState` resource container instead of the walkthrough's `Settings` class and direct settings dependency. Settings live in a responsibility subdirectory, consistent with the updated specification §2.2 and AGENTS.md directory-only feature-root rule. The settings directory currently uses namespace-package behavior without an `__init__.py`; existing imports pass in the container.
+- Development Compose explicitly supplies the development environment and interpolated debug flag. `.env.example` contains only non-secret development values. `pydantic-settings` is declared and locked; the existing Dockerfile installs the locked dependencies and excludes populated environment files from the build context.
+- Reviewed the existing AGENTS.md/specification layout changes without modifying them. The plan's baseline version label remains historical; the current specification is v0.4.2.
+
+### Verification evidence and limits
+
+Ran `docker compose -f compose.yaml -f compose.dev.yaml exec api python -m pytest` and observed **12 passed in 1.29s**, on Linux with Python 3.12.7 and pytest 9.2.0. These are the existing five application, three container, and four Nginx tests. The user's successful demonstration checks are reported confirmation; their console output was not supplied or independently rerun during this review.
+
+The regression suite does not establish configuration precedence, complete production-validation boundaries, secret-safe logs/responses, or dependency-override isolation. Those are the immediate paired **P01-T04 — Configuration and secret safety** lesson, which remains not started. No authentication/signing implementation is implied by the secret field.
+
+Updated affected navigation summaries and indexed the new modules, declared configuration/state types, dependency alias, and changed factory signature. Phase progress is **9/14 (64.3%)**.

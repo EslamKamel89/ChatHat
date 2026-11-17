@@ -1,5 +1,8 @@
 services:
   api:
+    environment:
+      CHATHAT_ENVIRONMENT: development
+      CHATHAT_DEBUG: "${CHATHAT_DEBUG:-false}"
     command:
       - uvicorn
       - chathat.main:create_app
