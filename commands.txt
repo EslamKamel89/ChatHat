@@ -2,7 +2,7 @@
 docker compose -f compose.yaml -f compose.dev.yaml up --build -d
 
 # Run tests inside the container
-docker compose -f compose.yaml -f compose.dev.yaml exec api python -m pytest
+docker compose -f compose.yaml -f compose.dev.yaml exec api python -m pytest -v
 
 # down command 
 docker compose -f compose.yaml -f compose.dev.yaml down

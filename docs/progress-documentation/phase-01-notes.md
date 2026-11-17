@@ -194,3 +194,20 @@ Ran `docker compose -f compose.yaml -f compose.dev.yaml exec api python -m pytes
 The regression suite does not establish configuration precedence, complete production-validation boundaries, secret-safe logs/responses, or dependency-override isolation. Those are the immediate paired **P01-T04 — Configuration and secret safety** lesson, which remains not started. No authentication/signing implementation is implied by the secret field.
 
 Updated affected navigation summaries and indexed the new modules, declared configuration/state types, dependency alias, and changed factory signature. Phase progress is **9/14 (64.3%)**.
+
+## P01-T04 · Configuration and secret safety
+
+**Completed 2026-11-17.** Reviewed the new, untracked `src/chathat/core/tests/test_config.py` against the implementation and lesson contract. No blocking issues found. The existing `commands.txt` change was reviewed and preserved; no application code was modified during this update.
+
+### Coverage and isolation
+
+- A module-local, function-scoped autouse fixture removes inherited `CHATHAT_*` values using `monkeypatch`, which restores them after each test. Temporary dotenv files and working-directory changes are prepared and cleaned up automatically by pytest. No manual configuration, extra service, dependency installation, or test-specific environment setup is required.
+- Tests cover constructor/environment/default precedence, boolean parsing, disabled implicit dotenv loading, missing/invalid environment and debug values blocking factory creation, production debug/secret failures, the 31/32-character boundary, and development/test behavior without credentials.
+- Secret tests check masked representations, model-dump exclusion, formatted validation-error logging, and synthetic secret absence from current health/OpenAPI/404 responses, headers, and captured request logs. They do not guarantee safety when explicitly extracting raw secrets or logging raw error dictionaries, nor coverage of future endpoints.
+- Application tests verify immutable configuration, independent per-application snapshots, dependency overrides isolated to one application, restoration after clearing overrides, and unchanged stored application resources. Test-only routes exist only on fresh in-process apps; the running service is not modified.
+
+### Supplied verification evidence
+
+The user supplied `docker compose -f compose.yaml -f compose.dev.yaml exec api python -m pytest -v` output reporting **29 passed in 1.39s**, on Linux with Python 3.12.7 and pytest 9.2.0. The suite consists of five application tests, **17 configuration cases**, three container tests, and four Nginx tests. The lesson's earlier prediction of 30 total tests was an arithmetic error; static inspection confirms 17 new cases and 29 total, with no described test omitted. Tests were not rerun during this documentation update. `-v` only changes reporting; tests remain discoverable through the required command without additional flags or setup.
+
+Indexed the new module's actual fixture/test signatures and decorators without inferring missing return annotations. Phase progress is **10/14 (71.4%)**. The next lesson is **P01-I05 — PostgreSQL/pgvector, SQLModel and Alembic**.

@@ -2,7 +2,7 @@
 
 > **Source of truth:** [Implementation plan](../chathat-implementation-plan.md), Phase 01.  
 > **Specification:** [ChatHat specification](../chathat-spec.md), section 24 (Docker Compose and Nginx).  
-> **Progress:** 9 / 14 lessons completed (64.3%).\
+> **Progress:** 10 / 14 lessons completed (71.4%).\
 > **Last reviewed:** 2026-11-17.
 
 ## Lesson progress
@@ -20,7 +20,7 @@ Update a row **only after** the lesson's work and verification are complete. Rec
 | P01-I03 | Implement | Nginx Compose service and internal routing | Completed | 2026-11-15 | [Diff review and supplied runtime evidence](phase-01-notes.md#p01-i03--nginx-compose-service-and-internal-routing) | Nginx health/static/404 routing verified; eight regression tests pass. Dedicated proxy tests follow in P01-T03. |
 | P01-T03 | Test | Nginx proxy and network isolation | Completed | 2026-11-17 | [Scope decision and container pytest evidence](phase-01-notes.md#p01-t03--nginx-proxy-and-network-isolation) | 12 passed in 1.22s. Completed within the user-approved no-special-setup scope; SSE and production/database checks explicitly deferred. |
 | P01-I04 | Implement | Typed settings and environment boundaries | Completed | 2026-11-17 | [Configuration review and regression evidence](phase-01-notes.md#p01-i04--typed-settings-and-environment-boundaries) | Config validation, secret masking/exclusion, typed AppState, and dependency wiring reviewed; 12 regression tests pass. Dedicated coverage follows in T04. |
-| P01-T04 | Test | Configuration and secret safety | Not started | — | — | — |
+| P01-T04 | Test | Configuration and secret safety | Completed | 2026-11-17 | [Test review and supplied container evidence](phase-01-notes.md#p01-t04--configuration-and-secret-safety) | 29 passed in 1.39s; 17 configuration cases cover precedence, validation, secret safety, app isolation, and dependency overrides. |
 | P01-I05 | Implement | PostgreSQL/pgvector, SQLModel and Alembic | Not started | — | — | — |
 | P01-T05 | Test | PostgreSQL persistence and migration lifecycle | Not started | — | — | — |
 | P01-I06 | Implement | Containerized developer commands and CI | Not started | — | — | — |

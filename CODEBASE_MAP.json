@@ -287,6 +287,174 @@
       }
     ]
   },
+  "src/chathat/core/tests/test_config.py": {
+    "summary": "Configuration tests for isolated environment inputs, precedence, production validation, secret-safe output, application ownership, and dependency overrides.",
+    "namespace": "chathat.core.tests.test_config",
+    "functions": [
+      {
+        "name": "isolate_config_environment",
+        "summary": "Removes inherited CHATHAT_ environment variables for each test using monkeypatch restoration.",
+        "parameters": [
+          {
+            "name": "monkeypatch",
+            "type": "pytest.MonkeyPatch"
+          }
+        ],
+        "decorators": [
+          "pytest.fixture(autouse=True)"
+        ]
+      },
+      {
+        "name": "test_constructor_overrides_environment_and_environment_overrides_defaults",
+        "summary": "Checks explicit arguments, environment values, boolean parsing, and defaults in precedence order.",
+        "parameters": [
+          {
+            "name": "monkeypatch",
+            "type": "pytest.MonkeyPatch"
+          }
+        ]
+      },
+      {
+        "name": "test_dotenv_is_not_loaded_implicitly",
+        "summary": "Checks an automatically created local dotenv file is not loaded.",
+        "parameters": [
+          {
+            "name": "tmp_path",
+            "type": "Path"
+          },
+          {
+            "name": "monkeypatch",
+            "type": "pytest.MonkeyPatch"
+          }
+        ]
+      },
+      {
+        "name": "test_invalid_configuration_prevents_app_creation",
+        "summary": "Checks missing or invalid environment and invalid debug inputs prevent factory creation.",
+        "parameters": [
+          {
+            "name": "monkeypatch",
+            "type": "pytest.MonkeyPatch"
+          },
+          {
+            "name": "environment",
+            "type": "str | None"
+          },
+          {
+            "name": "debug",
+            "type": "str | None"
+          },
+          {
+            "name": "error_type",
+            "type": "str"
+          },
+          {
+            "name": "location",
+            "type": "tuple[str, ...]"
+          }
+        ],
+        "returns": "None",
+        "decorators": [
+          "pytest.mark.parametrize(('environment', 'debug', 'error_type', 'location'), [(None, None, 'missing', ('environment',)), ('staging', None, 'literal_error', ('environment',)), ('test', 'not-a-boolean', 'bool_parsing', ('debug',))])"
+        ]
+      },
+      {
+        "name": "test_production_rejects_unsafe_configuration",
+        "summary": "Checks production rejects debug mode, a missing secret, and a secret below the minimum length.",
+        "parameters": [
+          {
+            "name": "debug",
+            "type": "bool"
+          },
+          {
+            "name": "secret",
+            "type": "str | None"
+          },
+          {
+            "name": "message",
+            "type": "str"
+          }
+        ],
+        "returns": "None",
+        "decorators": [
+          "pytest.mark.parametrize(('debug', 'secret', 'message'), [(True, 'x' * 32, 'Production must disable debug mode'), (False, None, 'Production requires CHATHAT_SECRET_KEY'), (False, 'x' * 31, 'at least 32 characters')])"
+        ]
+      },
+      {
+        "name": "test_production_accepts_minimum_secret_length",
+        "summary": "Checks production accepts the minimum secret length and the factory retains the configuration instance.",
+        "returns": "None"
+      },
+      {
+        "name": "test_nonproduction_does_not_require_a_secret",
+        "summary": "Checks development and test configurations allow an absent secret.",
+        "parameters": [
+          {
+            "name": "environment",
+            "type": "str"
+          }
+        ],
+        "returns": "None",
+        "decorators": [
+          "pytest.mark.parametrize('environment', ['development', 'test'])"
+        ]
+      },
+      {
+        "name": "test_secret_is_masked_in_logs_and_excluded_from_serialization",
+        "summary": "Checks secret representations are masked and secret fields are excluded from serialization.",
+        "parameters": [
+          {
+            "name": "caplog",
+            "type": "pytest.LogCaptureFixture"
+          }
+        ],
+        "returns": "None"
+      },
+      {
+        "name": "test_validation_error_string_does_not_log_secret_input",
+        "summary": "Checks formatted validation errors do not expose synthetic secret input in captured logs.",
+        "parameters": [
+          {
+            "name": "caplog",
+            "type": "pytest.LogCaptureFixture"
+          }
+        ],
+        "returns": "None"
+      },
+      {
+        "name": "test_factory_snapshots_configuration_per_application",
+        "summary": "Checks separate applications retain independently loaded configuration snapshots.",
+        "parameters": [
+          {
+            "name": "monkeypatch",
+            "type": "pytest.MonkeyPatch"
+          }
+        ],
+        "returns": "None"
+      },
+      {
+        "name": "test_configuration_cannot_be_reassigned",
+        "summary": "Checks frozen configuration rejects field reassignment.",
+        "returns": "None"
+      },
+      {
+        "name": "test_dependency_override_is_local_and_restorable",
+        "summary": "Checks dependency overrides are application-local, restorable, and do not mutate stored state.",
+        "returns": "None"
+      },
+      {
+        "name": "test_public_responses_and_request_logs_do_not_expose_configuration",
+        "summary": "Checks current health, OpenAPI, and unknown-route responses and request logs do not expose synthetic secret values.",
+        "parameters": [
+          {
+            "name": "caplog",
+            "type": "pytest.LogCaptureFixture"
+          }
+        ],
+        "returns": "None"
+      }
+    ]
+  },
   "src/chathat/core/tests/test_container.py": {
     "summary": "Container tests for Compose source configuration, running Uvicorn health, and the non-root Python environment.",
     "namespace": "chathat.core.tests.test_container",
