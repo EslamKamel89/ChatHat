@@ -142,3 +142,34 @@ Next is **P01-I03 — Nginx Compose service and internal routing**.
 - The supplied pytest run verifies the existing regression suite; the manual HTTP checks verify the Nginx ingress. Header spoofing/trusted forwarding, oversized-body rejection, progressive SSE delivery, and recovery after upstream address changes were not exercised by this evidence.
 - Compose source assertions do not exercise Compose's merge engine. No production override or database exists yet, so production/database exposure remains future verification work. TLS and production hardening remain Phase 12 work.
 - P01-T03 remains **Not started**. It is the immediate next lesson; do not advance to P01-I04 before its required tests pass. Tests must continue to prepare their inputs automatically and run with plain `pytest` inside the normally started API container.
+
+## P01-T03 · Nginx proxy and network isolation
+
+**In progress — first increment verified 2026-11-16.** Reviewed the new, untracked [test_nginx.py](../../src/chathat/core/tests/test_nginx.py). No blocking issues found in this increment. The test sends a real HTTP request to `http://nginx/health` from the API container, exercising Nginx → Uvicorn rather than API-container loopback. `ProxyHandler({})` disables environment-configured HTTP proxies, the request has a five-second timeout, and the response context manager closes the connection. Assertions verify HTTP 200, the JSON content type, and the exact `{"status": "ok"}` payload. No persistent test state or special test configuration is introduced.
+
+### Supplied verification evidence
+
+The user supplied output for `docker compose -f compose.yaml -f compose.dev.yaml exec api pytest`: **9 passed in 1.33s**, on Linux with Python 3.12.7 and pytest 9.2.0. Collection includes five application tests, three container tests, and the new Nginx health test. Tests were not rerun during this documentation update.
+
+### Completion and scope decision — 2026-11-17
+
+**Completed within the user-approved no-special-setup scope.** The user required all tests to run through `docker compose -f compose.yaml -f compose.dev.yaml exec api python -m pytest` and excluded tests needing special setup. The user then explicitly requested that P01-T03 be recorded as completed. This narrows the original lesson's acceptance scope; it does not establish the deferred behaviors below.
+
+Added three tests alongside the existing Nginx health test:
+
+- The `/health/` redirect preserves the supplied Host (including port) and uses HTTP despite spoofed `X-Forwarded-Proto`, `X-Forwarded-Host`, and `Forwarded` headers. This verifies observable host/scheme behavior, not client-IP forwarding or positive HTTPS forwarding.
+- Nginx returns the expected stylesheet with a CSS content type; the direct API returns 404 for the same asset path.
+- A Content-Length of 10 MiB plus one byte receives an Nginx HTTP 413 before the body is sent. This verifies early declared-size rejection, not streamed/chunked-body enforcement or the exact accepted-size boundary.
+
+Ran `docker compose -f compose.yaml -f compose.dev.yaml exec api python -m pytest` and observed **12 passed in 1.22s**, on Linux with Python 3.12.7 and pytest 9.2.0: five application tests, three container tests, and four Nginx tests. No extra setup, dependencies, application routes, or test-specific environment variables were introduced.
+
+### Deferred coverage
+
+- Progressive SSE delivery is excluded from this lesson's completed scope because the running app has no SSE endpoint; testing it would require additional setup. The original curriculum requirement remains deferred, not verified.
+- Full client-IP forwarding and positive trusted HTTPS forwarding remain unverified.
+- Existing Compose source assertions cover API port non-publication and Nginx-only development publication. They do not validate Compose's merge engine or prove external runtime port isolation.
+- Production-model application/database isolation remains deferred because `compose.prod.yaml` and PostgreSQL do not exist yet. Verify when the relevant infrastructure exists.
+
+Phase progress is **8/14 (57.1%)**. The next lesson is **P01-I04 — Typed settings and environment boundaries**.
+
+Updated `CODEBASE_MAP.json` for the four declared test functions during the preceding authorized test changes. This progress-only update does not change indexed responsibilities or declarations, so no further map edit is needed.

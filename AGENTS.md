@@ -25,6 +25,15 @@ Inspect the actual repository tree and relevant source files. Do not assume file
 - Ask only blocking or high-impact questions. State reasonable reversible engineering assumptions rather than interrupting for trivial choices.
 - For explicit requests to modify files, make only scoped changes, show the affected paths and tests, and preserve unrelated work.
 
+## Lesson teaching quality
+
+- Every lesson must be informative, very concise, and code-centric. Maximize learning value per sentence: explain advanced concepts that affect correctness, security, runtime behavior, or maintainability; omit repetition, generic introductions, and elementary syntax unless it affects the design.
+- Teach as an instructor typing alongside the developer: give the exact file path and insertion/replacement location, show a small coherent code chunk, then immediately explain its purpose, execution flow, and the important design decision. Follow the order the developer should type and connect each chunk to the previous one.
+- **Concise explanations must never mean incomplete code.** Following the lesson from the inspected checkout must produce the full runnable implementation for that lesson. Include every required import, declaration, helper, fixture, configuration change, dependency command, and wiring step. Do not use ellipses, pseudocode, TODOs, omitted bodies, or instructions such as “implement similarly” in place of required code. Clearly identify existing code that remains unchanged.
+- Cover the entire lesson's agreed acceptance scope. Do not present one increment as the complete lesson while silently omitting required behavior or tests. State any genuine prerequisite gap or proposed deferral explicitly; do not claim deferred behavior is implemented or verified.
+- Prioritize mechanisms and trade-offs over narration: explain relevant dependency scopes, lifecycle, transactions, concurrency, failure handling, and security boundaries next to the code that implements them. Avoid introducing advanced abstractions solely to make the lesson appear advanced.
+- Finish with exact runnable commands, expected observable results, and a short completeness check against the lesson's acceptance criteria. Include relevant `CODEBASE_MAP.json` maintenance instructions. Keep proposed code and expected results distinct from verified implementation and observed results.
+
 ## Lesson execution contract
 
 Follow `docs/chathat-implementation-plan.md` exactly: **Pxx-Iyy implementation immediately followed by Pxx-Tyy pytest testing**. Never skip a paired testing lesson or begin the next implementation lesson while its tests are failing.

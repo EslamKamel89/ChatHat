@@ -220,6 +220,33 @@
       }
     ]
   },
+  "src/chathat/core/tests/test_nginx.py": {
+    "summary": "HTTP integration tests for Nginx health routing, redirect host/protocol handling, static assets, and early oversized-body rejection.",
+    "namespace": "chathat.core.tests.test_nginx",
+    "functions": [
+      {
+        "name": "test_health_through_nginx",
+        "summary": "Checks HTTP status, JSON content type, and health payload through Nginx over the Compose network.",
+        "returns": "None"
+      },
+      {
+        "name": "test_redirect_preserves_host_and_rejects_spoofed_protocol",
+        "summary": "Checks the redirect preserves the Host header and uses HTTP despite spoofed forwarding headers.",
+        "returns": "None"
+      },
+      {
+        "name": "test_static_stylesheet_is_served_by_nginx",
+        "summary": "Checks the CSS response through Nginx and absence of the static route on the direct API.",
+        "returns": "None"
+      },
+      {
+        "name": "test_nginx_rejects_body_larger_than_limit_before_upload",
+        "summary": "Checks Nginx returns HTTP 413 from an oversized Content-Length before the body is sent.",
+        "returns": "None"
+      }
+    ]
+  },
+
   "src/chathat/main.py": {
     "summary": "Application factory wiring the core lifespan and health router into each FastAPI instance.",
     "namespace": "chathat.main",
