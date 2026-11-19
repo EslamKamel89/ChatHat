@@ -1,7 +1,9 @@
 from typing import Literal, Self
 
-from pydantic import Field, SecretStr, model_validator
+from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from sqlalchemy.engine import make_url
+from sqlalchemy.exc import ArgumentError
 
 
 class Config(BaseSettings):
@@ -19,6 +21,7 @@ class Config(BaseSettings):
     secret.get_secret_value()    # "my-secret"
     """
     secret_key: SecretStr | None = Field(default=None, exclude=True)
+    database_url: SecretStr | None = Field(default=None, exclude=True)
 
     @model_validator(mode="after")
     def check_environment(self) -> Self:
@@ -34,3 +37,19 @@ class Config(BaseSettings):
                     "Production requires a secret key of at least 32 characters"
                 )
         return self
+
+    @field_validator("database_url")
+    @classmethod
+    def check_database_url(cls, value: SecretStr | None) -> SecretStr | None:
+        if value is None:
+            return None
+        try:
+            url = make_url(value.get_secret_value())
+        except ArgumentError:
+            raise ValueError("Database URL must be a valid PostgreSQL URL") from None
+        if url.drivername != "postgresql+asyncpg" or not url.host or not url.database:
+            raise ValueError(
+                "Database URL requires postgresql+asyncpg, a host, and a database"
+            )
+
+        return value

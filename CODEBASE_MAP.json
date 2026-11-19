@@ -3,7 +3,7 @@
     "summary": "Excludes local dependencies, secrets, caches, and runtime data from Docker build contexts."
   },
   ".env.example": {
-    "summary": "Safe examples of the development HTTP host port and debug setting."
+    "summary": "Development HTTP/debug and pgAdmin settings with empty database and pgAdmin password placeholders."
   },
   ".gitignore": {
     "summary": "Excludes dependencies, generated artifacts, local configuration, secrets, and runtime data from Git."
@@ -15,16 +15,16 @@
     "summary": "Project overview and links to the product specification, implementation plan, and progress tracker."
   },
   "commands.txt": {
-    "summary": "Development Compose startup, containerized pytest, and shutdown commands."
+    "summary": "Development Compose startup, containerized pytest, shutdown, migration revision generation, and upgrade commands."
   },
   "compose.dev.yaml": {
-    "summary": "Development environment/debug settings, Uvicorn reload, source bind mount, trusted proxy address, and Nginx-only loopback host-port publication."
+    "summary": "Development API settings, database URL, reload and source mount, isolated test PostgreSQL service, and loopback Nginx and pgAdmin interfaces."
   },
   "compose.yaml": {
-    "summary": "API and Nginx service definitions, health checks, read-only proxy assets, and network addressing for proxy trust."
+    "summary": "API, Nginx, and PostgreSQL/pgvector services with readiness dependencies, health checks, persistent database storage, proxy assets, and network addressing."
   },
   "dockerfiles/Dockerfile.api": {
-    "summary": "Builds the non-root Python API image with locked development dependencies and the Uvicorn application-factory command."
+    "summary": "Builds the non-root API image with locked dependencies, packaged Alembic configuration and migrations, and the Uvicorn application-factory command."
   },
   "nginx/default.conf": {
     "summary": "Resolves the API upstream through Docker DNS, proxies HTTP with replaced forwarding headers, serves static assets, and configures body limits and streaming timeouts."
@@ -44,12 +44,12 @@
     "namespace": "chathat.core"
   },
   "src/chathat/core/application/lifespan.py": {
-    "summary": "Async application lifespan setting the startup flag and clearing it during shutdown.",
+    "summary": "Application lifespan managing the startup flag and disposing the application database engine during shutdown.",
     "namespace": "chathat.core.application.lifespan",
     "functions": [
       {
         "name": "lifespan",
-        "summary": "Sets app.state.started on entry and clears it in a finally block.",
+        "summary": "Sets the startup flag and clears it in finally before awaiting disposal of an optional database engine.",
         "async": true,
         "parameters": [
           {
@@ -78,6 +78,11 @@
           {
             "name": "config",
             "type": "Config"
+          },
+          {
+            "name": "database",
+            "type": "Database | None",
+            "default": "None"
           }
         ]
       }
@@ -173,7 +178,7 @@
     ]
   },
   "src/chathat/core/settings/config.py": {
-    "summary": "Immutable environment-backed configuration with secret exclusion and production validation.",
+    "summary": "Immutable environment-backed configuration with excluded secrets, production safeguards, and PostgreSQL asyncpg URL validation.",
     "namespace": "chathat.core.settings.config",
     "classes": [
       {
@@ -196,6 +201,11 @@
             "name": "secret_key",
             "type": "SecretStr | None",
             "default": "Field(default=None, exclude=True)"
+          },
+          {
+            "name": "database_url",
+            "type": "SecretStr | None",
+            "default": "Field(default=None, exclude=True)"
           }
         ],
         "methods": [
@@ -209,6 +219,23 @@
             "returns": "Self",
             "decorators": [
               "model_validator(mode='after')"
+            ]
+          },
+          {
+            "name": "check_database_url",
+            "parameters": [
+              {
+                "name": "cls"
+              },
+              {
+                "name": "value",
+                "type": "SecretStr | None"
+              }
+            ],
+            "returns": "SecretStr | None",
+            "decorators": [
+              "field_validator(\"database_url\")",
+              "classmethod"
             ]
           }
         ]
@@ -518,12 +545,12 @@
   },
 
   "src/chathat/main.py": {
-    "summary": "Application factory validating configuration and wiring typed application resources, debug mode, core lifespan, and health routing.",
+    "summary": "Application factory resolving configuration, optionally creating lazy database resources, and wiring debug mode, lifespan, and health routing.",
     "namespace": "chathat.main",
     "functions": [
       {
         "name": "create_app",
-        "summary": "Resolves Config, stores AppState on the application, and registers the core lifespan and health router.",
+        "summary": "Resolves Config, constructs an optional Database, stores AppState, and registers the core lifespan and health router.",
         "returns": "FastAPI",
         "parameters": [
           {
@@ -538,5 +565,154 @@
   },
   "uv.lock": {
     "summary": "Resolved Python dependency versions, distribution metadata, and integrity hashes for locked installation."
+  },
+  "alembic.ini": {
+    "summary": "Alembic migration paths, revision-generation options, and console logging configuration without a populated database URL."
+  },
+  "migrations/env.py": {
+    "summary": "Async Alembic environment using shared SQLModel metadata, validated configured or programmatic database URLs, optional supplied connections, and unpooled migration connections.",
+    "namespace": "migrations.env",
+    "functions": [
+      {
+        "name": "get_database_url",
+        "parameters": [],
+        "returns": "URL"
+      },
+      {
+        "name": "run_migrations_offline",
+        "parameters": [],
+        "returns": "None"
+      },
+      {
+        "name": "do_run_migrations",
+        "parameters": [
+          {
+            "name": "connection",
+            "type": "Connection"
+          }
+        ],
+        "returns": "None"
+      },
+      {
+        "name": "run_async_migrations",
+        "async": true,
+        "parameters": [],
+        "returns": "None"
+      },
+      {
+        "name": "run_migrations_online",
+        "parameters": [],
+        "returns": "None"
+      }
+    ]
+  },
+  "migrations/script.py.mako": {
+    "summary": "Alembic revision template with typed revision identifiers, SQLModel type support, and upgrade/downgrade functions."
+  },
+  "migrations/versions/0001_pgvector_enable_pgvector.py": {
+    "summary": "Initial Alembic revision creating the vector extension and dropping it without cascading on downgrade.",
+    "namespace": "migrations.versions.0001_pgvector_enable_pgvector",
+    "functions": [
+      {
+        "name": "upgrade",
+        "parameters": [],
+        "returns": "None"
+      },
+      {
+        "name": "downgrade",
+        "parameters": [],
+        "returns": "None"
+      }
+    ],
+    "properties": [
+      {
+        "name": "revision",
+        "type": "str",
+        "default": "'0001_pgvector'"
+      },
+      {
+        "name": "down_revision",
+        "type": "str | None",
+        "default": "None"
+      },
+      {
+        "name": "branch_labels",
+        "type": "str | Sequence[str] | None",
+        "default": "None"
+      },
+      {
+        "name": "depends_on",
+        "type": "str | Sequence[str] | None",
+        "default": "None"
+      }
+    ]
+  },
+  "src/chathat/core/database/__init__.py": {
+    "summary": "Exports SQLModel metadata and assigns deterministic index and constraint naming conventions.",
+    "namespace": "chathat.core.database",
+    "aliases": [
+      {
+        "name": "metadata",
+        "value": "SQLModel.metadata"
+      }
+    ]
+  },
+  "src/chathat/core/database/sessions.py": {
+    "summary": "Database resource container and lazy async engine/session factory with bounded pooling, pre-ping, hidden SQL parameters, and retained loaded attributes after commit.",
+    "namespace": "chathat.core.database.sessions",
+    "functions": [
+      {
+        "name": "create_database",
+        "parameters": [
+          {
+            "name": "url",
+            "type": "SecretStr"
+          }
+        ],
+        "returns": "Database"
+      }
+    ],
+    "classes": [
+      {
+        "name": "Database",
+        "kind": "class",
+        "decorators": [
+          "dataclass(frozen=True, slots=True)"
+        ],
+        "properties": [
+          {
+            "name": "engine",
+            "type": "AsyncEngine"
+          },
+          {
+            "name": "sessions",
+            "type": "async_sessionmaker[AsyncSession]"
+          }
+        ]
+      }
+    ]
+  },
+  "src/chathat/core/dependencies/database.py": {
+    "summary": "Request session provider returning 503 when database resources are absent and closing sessions on dependency exit.",
+    "namespace": "chathat.core.dependencies.database",
+    "functions": [
+      {
+        "name": "provide_session",
+        "async": true,
+        "parameters": [
+          {
+            "name": "state",
+            "type": "AppStateDependency"
+          }
+        ],
+        "returns": "AsyncGenerator[AsyncSession]"
+      }
+    ],
+    "aliases": [
+      {
+        "name": "SessionDependency",
+        "value": "Annotated[AsyncSession, Depends(provide_session)]"
+      }
+    ]
   }
 }

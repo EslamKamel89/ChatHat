@@ -211,3 +211,36 @@ Updated affected navigation summaries and indexed the new modules, declared conf
 The user supplied `docker compose -f compose.yaml -f compose.dev.yaml exec api python -m pytest -v` output reporting **29 passed in 1.39s**, on Linux with Python 3.12.7 and pytest 9.2.0. The suite consists of five application tests, **17 configuration cases**, three container tests, and four Nginx tests. The lesson's earlier prediction of 30 total tests was an arithmetic error; static inspection confirms 17 new cases and 29 total, with no described test omitted. Tests were not rerun during this documentation update. `-v` only changes reporting; tests remain discoverable through the required command without additional flags or setup.
 
 Indexed the new module's actual fixture/test signatures and decorators without inferring missing return annotations. Phase progress is **10/14 (71.4%)**. The next lesson is **P01-I05 — PostgreSQL/pgvector, SQLModel and Alembic**.
+
+
+## P01-I05 · PostgreSQL/pgvector, SQLModel and Alembic
+
+**Completed 2026-11-19.** Reviewed the working-tree diff, staged lockfile, and untracked database/migration modules against I05. The user reported successful completion and supplied the migration, query, and regression output below. No blocking implementation issues were found. Only the tracker, these notes, and the navigation index were modified during this review; staged and unrelated work was preserved.
+
+### Implementation and decisions
+
+- Base Compose now defines PostgreSQL/pgvector (`pgvector/pgvector:pg16`), its `postgres_data` named volume, initialization configuration, health check, and an API dependency on database health. Development Compose adds the masked application URL and a separate `test-db` server with its own role and `postgres_test_data` volume; API startup waits for test-server health as well. Neither database publishes a host port. These definitions prepare isolated infrastructure; guarded per-run test-database creation and cleanup are still T05 work.
+- The implementation additionally includes development-only pgAdmin (`dpage/pgadmin4:9.19`), bound to loopback port 5050 with separate persistent storage and an environment-supplied password. `.env.example` contains empty password placeholders. Development startup now requires both database and pgAdmin password inputs; no manual test-specific configuration is introduced. Unlike the walkthrough, development database initialization settings live in base Compose. Production credentials and least-privilege runtime/migration roles remain deployment work.
+- SQLModel metadata and deterministic constraint/index naming live directly in `core/database/__init__.py`, rather than a separate `metadata.py`. This respects directory-only feature roots. No business tables or tenant-owned data are introduced; future model imports must populate this metadata before autogeneration.
+- `Database` owns an async engine and SQLModel async-session factory. Engine creation is lazy, with pre-ping, pool size five, up to five overflow connections, ten-second pool wait, five-second connection timeout, hidden SQL parameters, and `expire_on_commit=False`. Pool limits apply per application process. `AppState` holds an optional database; the factory creates it only when a database URL exists, and lifespan awaits engine disposal at shutdown.
+- Configuration validates an optional `SecretStr` URL for the PostgreSQL asyncpg driver, host, and database, excluding it from dumps. Existing health/configuration-only application behavior remains possible without a database. `/health` still reflects application startup rather than database/schema readiness.
+- `provide_session` yields a request-owned session, closes it on dependency exit, and returns HTTP 503 when database resources are absent. Commit boundaries remain explicit in business operations; closing unfinished sessions rolls back their transactions. Session ownership is not tenant authorization.
+- The Alembic environment uses shared metadata, validated runtime or programmatic URLs, optional supplied synchronous connections, and an async engine with `NullPool`. `run_sync` bridges migration operations; the environment disposes its engine. Generated Alembic configuration retains console logging, explaining the INFO messages in the supplied output. The revision template includes SQLModel type support.
+- Revision `0001_pgvector` lives in `migrations/versions/0001_pgvector_enable_pgvector.py`. Upgrade creates the vector extension; downgrade drops it without `CASCADE`. Startup does not migrate or call `create_all()`. The Dockerfile packages configuration and migrations; changes to these image-baked files require rebuilding. Runtime dependencies and the staged lockfile include SQLModel, SQLAlchemy asyncio, asyncpg, and Alembic.
+- `commands.txt` adds revision-generation and upgrade commands. Its revision-generation example is specific to creating the initial revision and should not be rerun unchanged for later migrations. A newly added comment has trailing whitespace (`commands.txt:10`); this nonblocking formatting issue was reported and left unchanged. The README's documentation-only project-status statement remains stale and outside this update's scope.
+
+### Supplied verification evidence and limits
+
+The user supplied these results, all using the development Compose files and the API container:
+
+- `python -m alembic history`: `<base> -> 0001_pgvector (head), Enable pgvector.`
+- `python -m alembic upgrade head`: PostgreSQL transactional DDL and successful upgrade from base to `0001_pgvector`.
+- `python -m alembic current`: `0001_pgvector (head)`.
+- Async SQLModel session demonstration: `database=chathat; vector=0.8.7; distance=0.0`, confirming the development database identity, enabled extension, and real vector-distance operation.
+- `docker compose -f compose.yaml -f compose.dev.yaml exec api python -m pytest`: **29 passed in 2.17s**, Linux, Python 3.12.7, pytest 9.2.0. These are the unchanged five application, 17 configuration, three container, and four Nginx cases.
+
+These are user-supplied results, not commands rerun by the assistant during this update. They establish I05's migration/query smoke behavior and existing regression compatibility. They do not establish automated database constraints, transaction rollback, session cleanup, guarded test teardown, or migration downgrade behavior. No restart output was supplied; persistence after container restart remains unverified, so the combined phase persistence checklist remains unchecked.
+
+The immediate next lesson is **P01-T05 — PostgreSQL persistence and migration lifecycle**. Its fixtures must automatically use isolated databases on `test-db` under the unchanged standard pytest command, with explicit protections against development/production targets. Automated container-restart control remains to be resolved there; a reconnect check is not proof of persistence after a container restart. T05 is not started and no dedicated database tests are claimed complete.
+
+Updated the navigation index for changed responsibilities and actual new declarations, including the package-level metadata export and generated revision paths. Phase progress is **11/14 (78.6%)**.

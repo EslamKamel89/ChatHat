@@ -3,6 +3,7 @@ services:
     environment:
       CHATHAT_ENVIRONMENT: development
       CHATHAT_DEBUG: "${CHATHAT_DEBUG:-false}"
+      CHATHAT_DATABASE_URL: "postgresql+asyncpg://chathat:${CHATHAT_DB_PASSWORD:?Set CHATHAT_DB_PASSWORD in .env}@db:5432/chathat"
     command:
       - uvicorn
       - chathat.main:create_app
@@ -21,7 +22,45 @@ services:
       - /app/src
     volumes:
       - ./src:/app/src:ro
+    depends_on:
+      test-db:
+        condition: service_healthy
 
   nginx:
     ports:
       - "127.0.0.1:${CHATHAT_DEV_PORT:-8000}:80"
+
+  pgadmin:
+    image: dpage/pgadmin4:9.19
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "${CHATHAT_PGADMIN_EMAIL:-admin@chathat.local}"
+      PGADMIN_DEFAULT_PASSWORD: "${CHATHAT_PGADMIN_PASSWORD:?Set CHATHAT_PGADMIN_PASSWORD in .env}"
+      PGADMIN_DISABLE_POSTFIX: "1"
+    ports:
+      - "127.0.0.1:5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      db:
+        condition: service_healthy
+
+  test-db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: chathat_test_admin
+      POSTGRES_PASSWORD: public-test-fixture
+      POSTGRES_DB: postgres
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"'
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  pgadmin_data:
+  postgres_test_data:

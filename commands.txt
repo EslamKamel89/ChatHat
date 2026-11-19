@@ -7,3 +7,14 @@ docker compose -f compose.yaml -f compose.dev.yaml exec api python -m pytest -v
 # down command 
 docker compose -f compose.yaml -f compose.dev.yaml down
 
+# command for creating migration 
+docker compose -f compose.yaml -f compose.dev.yaml run --rm --no-deps \
+  -v "$PWD/migrations:/app/migrations" \
+  api python -m alembic revision \
+  --rev-id 0001_pgvector \
+  -m "enable pgvector"
+
+# command for applying the latest migration
+docker compose -f compose.yaml -f compose.dev.yaml exec api \
+  python -m alembic upgrade head
+
