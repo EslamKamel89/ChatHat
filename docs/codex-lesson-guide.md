@@ -14,6 +14,7 @@ Repository edits for implementation and progress records follow the authorizatio
 - Report the exact lesson ID and whether its prerequisites exist. Avoid treating planned files as already implemented.
 - Identify any material discrepancy between documentation and code.
 - Default to **read-only teaching**. Only modify the repository if the user explicitly requests edits.
+- Plan test paths under `src/chathat/<feature>/tests/<responsibility>/`, matching the feature's responsibility subpackages rather than adding test modules at the `tests/` root. Keep helpers alongside the relevant tests, shared fixtures in the nearest applicable `conftest.py`, and autouse scope narrow. Create package markers and groups only as needed. Core infrastructure tests use `core/tests/infrastructure/`. Every suite must remain discoverable through `docker compose -f compose.yaml -f compose.dev.yaml exec api python -m pytest -v` without special setup; reconcile moved paths/imports in `CODEBASE_MAP.json`.
 
 ## Implementation lesson format (`Pxx-Iyy`)
 

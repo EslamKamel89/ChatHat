@@ -42,7 +42,7 @@ Stop the server with Ctrl+C to observe shutdown. Repeat with `--lifespan off` fo
 
 **Completed 2026-11-10.** The submitted diff matches the checkout.
 
-- [tests/test_app.py](../../tests/test_app.py) covers HTTP 200 and 503 from `/health`, HTTP 404 for an unknown route, app state isolation through startup and shutdown, and startup exception propagation.
+- [tests/test_app.py](../../src/chathat/core/tests/application/test_app.py) covers HTTP 200 and 503 from `/health`, HTTP 404 for an unknown route, app state isolation through startup and shutdown, and startup exception propagation.
 - [pyproject.toml](../../pyproject.toml) declares `pytest` and `httpx2` in the uv development group. [uv.lock](../../uv.lock) records their resolved versions.
 
 The user's `pytest` run from the repository root collected five tests and reported **5 passed in 0.26s** on macOS with Python 3.12.7 and pytest 9.2.0.
@@ -56,7 +56,7 @@ The user's `pytest` run from the repository root collected five tests and report
 | [core/routes/health.py](../../src/chathat/core/routes/health.py) | Moved the original health router and response schema together. |
 | [core/application/lifespan.py](../../src/chathat/core/application/lifespan.py) | Extracted the existing startup and shutdown implementation. |
 | [main.py](../../src/chathat/main.py) | Imports the core router and lifespan while keeping `create_app()` as the entry point. |
-| [core/tests/test_app.py](../../src/chathat/core/tests/test_app.py) | Moved all five tests without changing their contents. The startup failure test still patches `main.lifespan`, the name resolved by the factory. |
+| [core/tests/test_app.py](../../src/chathat/core/tests/application/test_app.py) | Moved all five tests without changing their contents. The startup failure test still patches `main.lifespan`, the name resolved by the factory. |
 | [core/application/README.md](../../src/chathat/core/application/README.md) | Describes application setup responsibilities. |
 
 The original API source package and root test file were removed. The historical P01-I01 and P01-T01 entries above describe their original locations.
@@ -99,7 +99,7 @@ The Dockerfile lives under `dockerfiles/`, and the service uses Compose's defaul
 
 ## P01-T02 · Implementation and verification
 
-**Verified 2026-11-15.** Added [test_container.py](../../src/chathat/core/tests/test_container.py) with three tests covering the Compose source configuration, real Uvicorn health response, and non-root Python environment with installed dependencies. PyYAML is a locked development dependency. The image includes both Compose files so the fixture reads them automatically.
+**Verified 2026-11-15.** Added [test_container.py](../../src/chathat/core/tests/infrastructure/test_container.py) with three tests covering the Compose source configuration, real Uvicorn health response, and non-root Python environment with installed dependencies. PyYAML is a locked development dependency. The image includes both Compose files so the fixture reads them automatically.
 
 The standard command is `pytest` inside the running API container, after normal development startup. No test-specific environment variables or generated configuration files are required.
 
@@ -123,7 +123,7 @@ Next is **P01-I03 — Nginx Compose service and internal routing**.
 | [dockerfiles/Dockerfile.api](../../dockerfiles/Dockerfile.api) | Adds the same explicit proxy-header trust to the default Uvicorn command. |
 | [nginx/default.conf](../../nginx/default.conf) | Routes to `api:8000` using Docker DNS and dynamic upstream resolution; serves `/static/` directly; replaces forwarding headers; sets a 10 MiB body ceiling, 5-second connect timeout, 75-second read/send timeouts, and disables proxy response buffering/cache. |
 | [nginx/static/site.css](../../nginx/static/site.css) | Supplies the initial public static asset. |
-| [core/tests/test_container.py](../../src/chathat/core/tests/test_container.py) | Updates the existing Compose source assertion for Nginx port publication and absence of API port publication. The runtime API-health test still addresses Uvicorn directly. |
+| [core/tests/test_container.py](../../src/chathat/core/tests/infrastructure/test_container.py) | Updates the existing Compose source assertion for Nginx port publication and absence of API port publication. The runtime API-health test still addresses Uvicorn directly. |
 
 ### Supplied verification evidence
 
@@ -145,7 +145,7 @@ Next is **P01-I03 — Nginx Compose service and internal routing**.
 
 ## P01-T03 · Nginx proxy and network isolation
 
-**In progress — first increment verified 2026-11-16.** Reviewed the new, untracked [test_nginx.py](../../src/chathat/core/tests/test_nginx.py). No blocking issues found in this increment. The test sends a real HTTP request to `http://nginx/health` from the API container, exercising Nginx → Uvicorn rather than API-container loopback. `ProxyHandler({})` disables environment-configured HTTP proxies, the request has a five-second timeout, and the response context manager closes the connection. Assertions verify HTTP 200, the JSON content type, and the exact `{"status": "ok"}` payload. No persistent test state or special test configuration is introduced.
+**In progress — first increment verified 2026-11-16.** Reviewed the new, untracked [test_nginx.py](../../src/chathat/core/tests/infrastructure/test_nginx.py). No blocking issues found in this increment. The test sends a real HTTP request to `http://nginx/health` from the API container, exercising Nginx → Uvicorn rather than API-container loopback. `ProxyHandler({})` disables environment-configured HTTP proxies, the request has a five-second timeout, and the response context manager closes the connection. Assertions verify HTTP 200, the JSON content type, and the exact `{"status": "ok"}` payload. No persistent test state or special test configuration is introduced.
 
 ### Supplied verification evidence
 
@@ -244,3 +244,77 @@ These are user-supplied results, not commands rerun by the assistant during this
 The immediate next lesson is **P01-T05 — PostgreSQL persistence and migration lifecycle**. Its fixtures must automatically use isolated databases on `test-db` under the unchanged standard pytest command, with explicit protections against development/production targets. Automated container-restart control remains to be resolved there; a reconnect check is not proof of persistence after a container restart. T05 is not started and no dedicated database tests are claimed complete.
 
 Updated the navigation index for changed responsibilities and actual new declarations, including the package-level metadata export and generated revision paths. Phase progress is **11/14 (78.6%)**.
+
+
+## P01-T05 · PostgreSQL persistence and migration lifecycle
+
+**Initial review 2026-11-22; completion was pending at this point (resolved below).** Reviewed both untracked test modules, current infrastructure and migration/session wiring, and the user-supplied pytest results. The implemented cases have no blocking correctness issues identified in this review. The mandatory container-restart persistence criterion is not covered; the lesson remains **In progress**, without a completion date or approved deferral. Phase progress remains **11/14 (78.6%)**. The unrelated skill-file edit and all implementation/test files were preserved.
+
+### Isolation, coverage, and decisions
+
+- `core/tests/database_support.py` fixes administration to `test-db:5432`, the dedicated test role, and its public disposable-fixture credential. It does not read the development URL. Target validation requires the expected driver, host, port, username/password, no query overrides, and a generated `chathat_test_<32 hex>` database name.
+- Each function-scoped database fixture creates a database from `template0`. Cleanup runs after successful creation even when the context body fails; it validates the target and database owner, drops only the generated test database, and checks catalog removal. Administration and target connections close in finally blocks. Application engines are disposed within the same async scenario/event loop that uses them.
+- Seven guard cases reject unsafe targets; two cleanup cases verify removal after successful and failing contexts. A migration test checks clean upgrade, repeated upgrade, actual vector-distance operation, downgrade, and reupgrade. Another verifies that a synthetic table is absent from a second generated database.
+- Four PostgreSQL constraint cases cover primary-key/unique, not-null, and check violations by SQLSTATE, then prove the session can query after transaction rollback. The synthetic `probe` table is test-owned; this does not establish future product-model constraints or tenant authorization.
+- Further tests cover explicit transaction rollback, rollback on unfinished session close, committed rows through a replacement engine, successful/failing/unfinished test-only API requests, a real pooled-connection close event after application lifespan exit, and HTTP 503 without database resources. The close event proves closure occurred, not an exhaustive inventory of all possible connection leaks.
+- No extra service, dependency, environment variable, manual database preparation, skip, or alternate command was introduced. Tests use the already-started development `test-db` service and the existing read-only `src` mount. The phase's isolated-pytest exit criterion is now checked from the supplied run and source-reviewed fixture isolation.
+
+### User-supplied evidence
+
+`docker compose -f compose.yaml -f compose.dev.yaml exec api python -m pytest -v` reported **47 passed, 25 warnings in 3.20s**, on Linux, Python 3.12.7, pytest 9.2.0, with anyio 4.16.0. This comprises **18 new database cases** and the **29 existing regression cases**, with no skips. The result matches the reviewed test names and parametrization. The assistant did not rerun pytest, migrations, or database cleanup during this review.
+
+The warnings are non-failing deprecations: **11** from Alembic's missing `path_separator` setting and **14** from SQLModel's `session.execute()` wrapper. They are retained as maintenance findings; neither Alembic configuration nor test calls were changed as part of verification. The helper's declared context-manager return annotations are `AsyncGenerator[...]`; the index records those actual annotations rather than the walkthrough's `AsyncIterator[...]`.
+
+### Initial outstanding acceptance criterion (resolved below)
+
+At the initial review, the suite did not restarts a PostgreSQL container. `test_rollback_close_and_committed_reconnection` disposes one engine and opens another while the same database server remains running; that is not evidence of persistence after a container restart. At that point the API service had no container-restart control, and the user requires all tests to run through the existing command without special setup. The prior walkthrough disclosed this gap, but disclosure alone is not an approved deferral.
+
+At that review, the verification skill and lesson contract required leaving completion unrecorded until restart coverage was verified or the user approved a scope deferral. The combined phase database-persistence checklist was left unchecked and P01-I06 was not started.
+
+Indexed both new modules' actual top-level helpers, fixtures, tests, annotations, keyword-only defaults, async metadata, and decorators. Sensitive connection values, SQL bodies, nested local helpers, and verification results are excluded from the navigation index.
+
+
+### Restart coverage implemented and verified — 2026-11-22
+
+**P01-T05 completed; no acceptance deferral.** The user explicitly authorized implementing the missing coverage directly, with all tests still triggered only through `docker compose -f compose.yaml -f compose.dev.yaml exec api python -m pytest -v`.
+
+- Development `test-db` now has `restart: always` and a fixed `cluster_name=chathat_test_restartable` marker. No additional service, Docker socket mount, package, external controller, or user-supplied test setting was added. Development `db` is unchanged.
+- The guarded restart helper accepts only the existing allowlisted generated test URL, checks the marker, and requires PostgreSQL to be PID 1. It reads Linux `/proc/1/stat` start ticks (with an explicit length for procfs) and PostgreSQL startup time before sending the fixed `kill -INT 1` command through PostgreSQL's privileged server-program facility. SIGINT performs orderly fast shutdown; Docker restarts the exited test container. The existing dedicated test administration role has the required privileges; this helper is not application or production code.
+- The helper allows Docker's ten-second successful-start window, handles the expected shutdown disconnection, and polls readiness with a bounded timeout. It requires both a changed PID 1 process start identity and a later PostgreSQL startup timestamp. A stale Compose configuration fails at the marker check before shutdown rather than silently stopping an unconfigured server.
+- The new test commits a synthetic row, disposes its original engine, restarts the isolated test container, then verifies exact row values, retained Alembic revision `0001_pgvector`, and a real pgvector distance operation through new application database resources. Ordinary fixture teardown then removes its generated database. This covers a graceful container restart, not abrupt power loss, backup restoration, or volume replacement. Run the standard serial suite once per stack; restarting the shared test server can interrupt concurrent independent database suites.
+
+Assistant-run preparation used the normal development startup command `docker compose -f compose.yaml -f compose.dev.yaml up --build -d --wait` to apply the Compose change and refresh image-baked configuration. It succeeded; no volumes were removed and no development migrations were run. This is normal stack startup, not an alternate test trigger.
+
+Assistant-run verification used exactly:
+
+```sh
+docker compose -f compose.yaml -f compose.dev.yaml exec api python -m pytest -v
+```
+
+**Observed: 48 passed, 28 warnings in 3.68s**, Linux, Python 3.12.7, pytest 9.2.0. All **19 database cases** and **29 regression cases** passed, including the new restart case, with no skips. The non-failing deprecations remain: 12 Alembic path-separator warnings and 16 SQLModel execute-wrapper warnings. No unrelated warning cleanup was performed.
+
+A supplementary read-only Docker inspection of the observed test container reported `restart_count=1 status=running policy=always`, independently confirming that Docker actually restarted it. This inspection did not trigger tests. Existing user-supplied 47-pass evidence above is preserved as the pre-change baseline.
+
+Updated the affected Compose/helper/test index entries and validated declarations and paths. The tracker now records **12/14 (85.7%)**, checks database migration/persistence, and names **P01-I06 — Containerized developer commands and CI** as the immediate next lesson. No commits, pushes, or unrelated skill edits were made.
+
+
+### Test-directory decision and verified refactor — 2026-11-22
+
+The user approved grouping tests by responsibility inside every feature's existing `tests/` directory. This is the rule for future features as well as core: mirror the feature's responsibility subpackages, create groups only when needed, include `__init__.py` markers, keep helpers with their responsibility, and place shared fixtures in the nearest applicable `conftest.py`. A feature-wide `tests/conftest.py` is permitted; test modules must not accumulate at the `tests/` root. Keep autouse fixtures scoped to the tests that need them. Infrastructure spanning external configuration uses `core/tests/infrastructure/`.
+
+Applied moves:
+
+| Previous location under `core/tests/` | Current location under `core/tests/` |
+| --- | --- |
+| `test_app.py` | `application/test_app.py` |
+| `test_config.py` | `settings/test_config.py` |
+| `database_support.py` | `database/support.py` |
+| `test_database.py` | `database/test_database.py` |
+| `test_container.py` | `infrastructure/test_container.py` |
+| `test_nginx.py` | `infrastructure/test_nginx.py` |
+
+Added package markers for all four groups and changed the database helper import to `chathat.core.tests.database.support`. Test logic and fixture scope were preserved. `CODEBASE_MAP.json` was reconciled for the moved paths/namespaces and new markers; 42 entries were validated. Earlier evidence retains its historical path text; clickable links now point to the current files.
+
+Assistant-run post-refactor verification used exactly `docker compose -f compose.yaml -f compose.dev.yaml exec api python -m pytest -v` and observed **48 passed, 28 existing warnings in 3.93s**. All nested tests were discovered, including actual container-restart persistence coverage. Index and staged/unstaged whitespace checks passed. No extra test trigger, dependency, service, environment variable, or manual test preparation was introduced by the directory refactor.
+
+The rule is now documented in `AGENTS.md`, specification §2.2 (v0.4.3), the implementation plan, and the lesson delivery guide. This documentation update does not change code or invalidate the preceding test evidence; pytest was not rerun for prose-only changes. T05 remains completed, phase progress remains **12/14 (85.7%)**, and the next lesson remains **P01-I06**.

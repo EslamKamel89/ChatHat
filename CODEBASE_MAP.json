@@ -18,7 +18,7 @@
     "summary": "Development Compose startup, containerized pytest, shutdown, migration revision generation, and upgrade commands."
   },
   "compose.dev.yaml": {
-    "summary": "Development API settings, database URL, reload and source mount, isolated test PostgreSQL service, and loopback Nginx and pgAdmin interfaces."
+    "summary": "Development API settings, reload and source mount, restartable marked test PostgreSQL service, and loopback Nginx and pgAdmin interfaces."
   },
   "compose.yaml": {
     "summary": "API, Nginx, and PostgreSQL/pgvector services with readiness dependencies, health checks, persistent database storage, proxy assets, and network addressing."
@@ -246,9 +246,9 @@
     "summary": "Marks the feature-local core test package.",
     "namespace": "chathat.core.tests"
   },
-  "src/chathat/core/tests/test_app.py": {
+  "src/chathat/core/tests/application/test_app.py": {
     "summary": "In-process tests for health, missing routes, startup failures, lifespan cleanup, and application-state isolation.",
-    "namespace": "chathat.core.tests.test_app",
+    "namespace": "chathat.core.tests.application.test_app",
     "functions": [
       {
         "name": "app",
@@ -314,9 +314,9 @@
       }
     ]
   },
-  "src/chathat/core/tests/test_config.py": {
+  "src/chathat/core/tests/settings/test_config.py": {
     "summary": "Configuration tests for isolated environment inputs, precedence, production validation, secret-safe output, application ownership, and dependency overrides.",
-    "namespace": "chathat.core.tests.test_config",
+    "namespace": "chathat.core.tests.settings.test_config",
     "functions": [
       {
         "name": "isolate_config_environment",
@@ -482,9 +482,9 @@
       }
     ]
   },
-  "src/chathat/core/tests/test_container.py": {
+  "src/chathat/core/tests/infrastructure/test_container.py": {
     "summary": "Container tests for Compose source configuration, running Uvicorn health, and the non-root Python environment.",
-    "namespace": "chathat.core.tests.test_container",
+    "namespace": "chathat.core.tests.infrastructure.test_container",
     "functions": [
       {
         "name": "compose_files",
@@ -517,9 +517,9 @@
       }
     ]
   },
-  "src/chathat/core/tests/test_nginx.py": {
+  "src/chathat/core/tests/infrastructure/test_nginx.py": {
     "summary": "HTTP integration tests for Nginx health routing, redirect host/protocol handling, static assets, and early oversized-body rejection.",
-    "namespace": "chathat.core.tests.test_nginx",
+    "namespace": "chathat.core.tests.infrastructure.test_nginx",
     "functions": [
       {
         "name": "test_health_through_nginx",
@@ -714,5 +714,326 @@
         "value": "Annotated[AsyncSession, Depends(provide_session)]"
       }
     ]
+  },
+  "src/chathat/core/tests/database/support.py": {
+    "summary": "Isolated PostgreSQL helpers for guarded database creation/cleanup, migrations, async resources, and graceful test-container restart with PID 1 identity and readiness checks.",
+    "namespace": "chathat.core.tests.database.support",
+    "functions": [
+      {
+        "name": "require_test_url",
+        "summary": "Rejects targets outside the fixed test server, credentials, driver, port, query policy, and generated database-name pattern.",
+        "parameters": [
+          {
+            "name": "url",
+            "type": "URL"
+          }
+        ],
+        "returns": "None"
+      },
+      {
+        "name": "admin_connection",
+        "summary": "Yields a fixed test-server administration connection after checking database and role, then closes it.",
+        "async": true,
+        "returns": "AsyncGenerator[asyncpg.Connection]",
+        "decorators": [
+          "asynccontextmanager"
+        ]
+      },
+      {
+        "name": "target_connection",
+        "summary": "Validates and yields an isolated database connection, closing it on exit.",
+        "async": true,
+        "parameters": [
+          {
+            "name": "url",
+            "type": "URL"
+          }
+        ],
+        "returns": "AsyncGenerator[asyncpg.Connection]",
+        "decorators": [
+          "asynccontextmanager"
+        ]
+      },
+      {
+        "name": "scalar",
+        "summary": "Returns the first value of a statement through a validated isolated database connection.",
+        "async": true,
+        "parameters": [
+          {
+            "name": "url",
+            "type": "URL"
+          },
+          {
+            "name": "statement",
+            "type": "str"
+          }
+        ],
+        "returns": "object"
+      },
+      {
+        "name": "execute",
+        "summary": "Executes a statement through a validated isolated database connection.",
+        "async": true,
+        "parameters": [
+          {
+            "name": "url",
+            "type": "URL"
+          },
+          {
+            "name": "statement",
+            "type": "str"
+          }
+        ],
+        "returns": "None"
+      },
+      {
+        "name": "postgres_pid1_start",
+        "summary": "Requires PostgreSQL as container PID 1 and reads its Linux process start ticks.",
+        "async": true,
+        "parameters": [
+          {
+            "name": "connection",
+            "type": "asyncpg.Connection"
+          }
+        ],
+        "returns": "int"
+      },
+      {
+        "name": "restart_test_database",
+        "summary": "Validates the isolated marked target, requests orderly PID 1 shutdown, and waits for a changed container process identity and PostgreSQL startup time.",
+        "async": true,
+        "parameters": [
+          {
+            "name": "url",
+            "type": "URL"
+          }
+        ],
+        "returns": "tuple[int, int]"
+      },
+      {
+        "name": "drop_test_database",
+        "summary": "Validates the target and owner, force-drops the generated database, and checks its catalog removal.",
+        "async": true,
+        "parameters": [
+          {
+            "name": "url",
+            "type": "URL"
+          }
+        ],
+        "returns": "None"
+      },
+      {
+        "name": "disposable_database",
+        "summary": "Creates a generated test database and removes it in finally after successful creation.",
+        "returns": "Iterator[URL]",
+        "decorators": [
+          "contextmanager"
+        ]
+      },
+      {
+        "name": "migrate",
+        "summary": "Runs Alembic upgrade or downgrade with an explicit validated test URL.",
+        "parameters": [
+          {
+            "name": "url",
+            "type": "URL"
+          },
+          {
+            "name": "revision",
+            "type": "str"
+          },
+          {
+            "name": "downgrade",
+            "kind": "keyword_only",
+            "type": "bool",
+            "default": "False"
+          }
+        ],
+        "returns": "None"
+      },
+      {
+        "name": "database_resources",
+        "summary": "Yields application database resources for an isolated URL and awaits engine disposal.",
+        "async": true,
+        "parameters": [
+          {
+            "name": "url",
+            "type": "URL"
+          }
+        ],
+        "returns": "AsyncGenerator[Database]",
+        "decorators": [
+          "asynccontextmanager"
+        ]
+      }
+    ]
+  },
+  "src/chathat/core/tests/database/test_database.py": {
+    "summary": "Database fixtures and tests for target guards, cleanup, migrations, constraints, rollback, reconnection, actual test-container restart persistence, request sessions, and lifespan closure.",
+    "namespace": "chathat.core.tests.database.test_database",
+    "functions": [
+      {
+        "name": "database_url",
+        "summary": "Provides a fresh database per test with automatic teardown.",
+        "returns": "Iterator[URL]",
+        "decorators": [
+          "pytest.fixture"
+        ]
+      },
+      {
+        "name": "migrated_url",
+        "summary": "Applies Alembic head to the isolated test database.",
+        "parameters": [
+          {
+            "name": "database_url",
+            "type": "URL"
+          }
+        ],
+        "returns": "URL",
+        "decorators": [
+          "pytest.fixture"
+        ]
+      },
+      {
+        "name": "prepared_url",
+        "summary": "Creates a synthetic constrained table in the migrated test database.",
+        "parameters": [
+          {
+            "name": "migrated_url",
+            "type": "URL"
+          }
+        ],
+        "returns": "URL",
+        "decorators": [
+          "pytest.fixture"
+        ]
+      },
+      {
+        "name": "test_database_guard_rejects_unsafe_targets",
+        "summary": "Checks rejection of development or arbitrary hosts, ordinary database names, other roles/drivers, and URL query overrides.",
+        "parameters": [
+          {
+            "name": "changes",
+            "type": "dict"
+          }
+        ],
+        "returns": "None",
+        "decorators": [
+          "pytest.mark.parametrize('changes', [{'host': 'db'}, {'host': 'production.example'}, {'database': 'chathat'}, {'database': 'postgres'}, {'username': 'chathat'}, {'drivername': 'postgresql'}, {'query': {'host': 'db'}}])"
+        ]
+      },
+      {
+        "name": "test_database_cleanup_runs_after_success_or_failure",
+        "summary": "Checks catalog removal after normal context exit and a simulated test failure.",
+        "parameters": [
+          {
+            "name": "fail_inside",
+            "type": "bool"
+          }
+        ],
+        "returns": "None",
+        "decorators": [
+          "pytest.mark.parametrize('fail_inside', [False, True])"
+        ]
+      },
+      {
+        "name": "test_migration_upgrade_downgrade_and_reupgrade",
+        "summary": "Checks clean upgrade, repeated upgrade, vector distance, downgrade, and reupgrade.",
+        "parameters": [
+          {
+            "name": "database_url",
+            "type": "URL"
+          }
+        ],
+        "returns": "None"
+      },
+      {
+        "name": "test_databases_do_not_share_application_tables",
+        "summary": "Checks a synthetic table exists only in its owning test database.",
+        "parameters": [
+          {
+            "name": "prepared_url",
+            "type": "URL"
+          }
+        ],
+        "returns": "None"
+      },
+      {
+        "name": "test_constraints_rollback_failed_transactions",
+        "summary": "Checks PostgreSQL primary-key, unique, not-null, and check failures and session recovery after rollback.",
+        "parameters": [
+          {
+            "name": "prepared_url",
+            "type": "URL"
+          },
+          {
+            "name": "row",
+            "type": "dict"
+          },
+          {
+            "name": "sqlstate",
+            "type": "str"
+          }
+        ],
+        "returns": "None",
+        "decorators": [
+          "pytest.mark.parametrize(('row', 'sqlstate'), [({'id': 1, 'label': 'other', 'score': 1}, '23505'), ({'id': 2, 'label': 'baseline', 'score': 1}, '23505'), ({'id': 2, 'label': None, 'score': 1}, '23502'), ({'id': 2, 'label': 'negative', 'score': -1}, '23514')])"
+        ]
+      },
+      {
+        "name": "test_rollback_close_and_committed_reconnection",
+        "summary": "Checks rollback on exceptions, rollback of unfinished sessions, and committed data visible through a replacement engine.",
+        "parameters": [
+          {
+            "name": "prepared_url",
+            "type": "URL"
+          }
+        ],
+        "returns": "None"
+      },
+      {
+        "name": "test_committed_data_survives_test_database_container_restart",
+        "summary": "Commits a row, verifies a new container PID 1 after test-server restart, and checks retained row values, Alembic revision, and vector operation.",
+        "parameters": [
+          {
+            "name": "prepared_url",
+            "type": "URL"
+          }
+        ],
+        "returns": "None"
+      },
+      {
+        "name": "test_request_sessions_and_lifespan_cleanup",
+        "summary": "Checks test-only request commit/rollback behavior and a real connection-close event after application lifespan exit.",
+        "parameters": [
+          {
+            "name": "prepared_url",
+            "type": "URL"
+          }
+        ],
+        "returns": "None"
+      },
+      {
+        "name": "test_database_dependency_returns_503_without_resources",
+        "summary": "Checks missing database resources yield the expected HTTP 503 response.",
+        "returns": "None"
+      }
+    ]
+  },
+  "src/chathat/core/tests/application/__init__.py": {
+    "summary": "Marks the core application test package.",
+    "namespace": "chathat.core.tests.application"
+  },
+  "src/chathat/core/tests/settings/__init__.py": {
+    "summary": "Marks the core settings test package.",
+    "namespace": "chathat.core.tests.settings"
+  },
+  "src/chathat/core/tests/database/__init__.py": {
+    "summary": "Marks the core database test package.",
+    "namespace": "chathat.core.tests.database"
+  },
+  "src/chathat/core/tests/infrastructure/__init__.py": {
+    "summary": "Marks the core infrastructure test package.",
+    "namespace": "chathat.core.tests.infrastructure"
   }
 }

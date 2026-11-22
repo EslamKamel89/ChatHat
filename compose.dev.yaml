@@ -46,6 +46,8 @@ services:
 
   test-db:
     image: pgvector/pgvector:pg16
+    restart: always
+    command: ["postgres", "-c", "cluster_name=chathat_test_restartable"]
     environment:
       POSTGRES_USER: chathat_test_admin
       POSTGRES_PASSWORD: public-test-fixture

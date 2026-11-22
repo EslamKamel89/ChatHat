@@ -1,8 +1,8 @@
 # ChatHat — Product Requirements Specification
 
-> **Document version** 0.4.2\
+> **Document version** 0.4.3\
 > **Status** Draft with decisions Q001–Q061 and feature-based source organization incorporated\
-> **Last updated** 2026-11-17\
+> **Last updated** 2026-11-22\
 > **Repository (code SSOT):** https://github.com/EslamKamel89/ChatHat  
 > **Document role:** Product and behavioral requirements; not evidence that features are implemented.
 
@@ -144,7 +144,8 @@ If specification and code disagree, report the discrepancy rather than silently 
 - **Directory-only feature roots:** `src/chathat/core/` and every feature root `src/chathat/<feature>/` shall contain only directories as direct children, with `__init__.py` as the sole permitted direct file. Place all other authored files inside responsibility-based subdirectories, including Python modules, tests, and documentation. Feature roots may retain `__init__.py` as regular Python package markers. Responsibility subdirectories may contain files, including `__init__.py`. This rule does not apply to the application root `src/chathat/`, where `main.py` and `__init__.py` may remain. Generated or ignored runtime artifacts are outside this source-layout rule.
 - Use `src/chathat/core/` for application-wide code such as health checks, lifespan, settings, and database session setup. Use `src/chathat/auth/` for authentication code such as sign-in, sessions, and identity dependencies when that feature is introduced.
 - Keep the application factory in `src/chathat/main.py`. It assembles the FastAPI app and registers feature routers. Feature packages own their route definitions.
-- Place each feature's pytest suite and feature-specific fixtures in `src/chathat/<feature>/tests/`. For example, the factory, lifespan, and health tests belong in `src/chathat/core/tests/`. Pytest must discover the feature suites when run from the repository root.
+- Place each feature's pytest suite and feature-specific fixtures in `src/chathat/<feature>/tests/`. Group test modules into responsibility subpackages matching that feature, such as `tests/routes/`, `tests/services/`, `tests/models/`, `tests/settings/`, and `tests/database/`; do not maintain a flat list of test modules at the `tests/` root. Create groups as needed and include `__init__.py` package markers. Helpers belong with their responsibility, while shared fixtures belong in the nearest applicable `conftest.py`, including `tests/conftest.py` for feature-wide fixtures. Keep autouse fixture scope narrow.
+- Core uses `tests/application/` for application behavior, `tests/settings/` for configuration, `tests/database/` for database integration and helpers, and `tests/infrastructure/` for Docker/Nginx integration whose configuration lives outside Python feature code. Pytest must discover all nested feature suites through the established development command `docker compose -f compose.yaml -f compose.dev.yaml exec api python -m pytest -v`, without special setup or an alternate trigger.
 
 Use plural responsibility-based subpackages within each feature. Create them as their responsibilities are implemented.
 
@@ -157,7 +158,7 @@ Use plural responsibility-based subpackages within each feature. Create them as 
 | `dependencies/` | FastAPI dependency providers |
 | `settings/` | Typed configuration and environment validation, such as `core/settings/config.py` |
 | `application/` | Application-instance setup, including `core/application/lifespan.py` |
-| `tests/` | Feature tests and fixtures, including `conftest.py` when needed |
+| `tests/` | Feature tests grouped by responsibility; scoped helpers and `conftest.py` fixtures |
 
 The approved authentication layout is the following target structure for the authentication lessons.
 
@@ -183,8 +184,10 @@ src/chathat/auth/
 └── tests/
     ├── __init__.py
     ├── conftest.py
-    ├── test_sessions.py
-    └── test_oauth.py
+    └── routes/
+        ├── __init__.py
+        ├── test_sessions.py
+        └── test_oauth.py
 ```
 
 Apply the same convention to core by placing the health router in `core/routes/health.py` and `HealthResponse` in `core/schemas/health.py`. Keep application lifespan in `core/application/lifespan.py`, typed settings in `core/settings/config.py`, dependency providers in `core/dependencies/`, and tests in `core/tests/`. Do not introduce direct files such as `core/settings.py`; `core/__init__.py` is permitted as the sole file exception.
@@ -773,6 +776,7 @@ The following are not confirmed MVP commitments:
 | 2026-11-08 | Inspect retrieved context for each answer           | CONFIRMED | Trace schema proposed                              |
 | 2026-11-08 | International SaaS billing                          | CONFIRMED | Provider and pricing OPEN                          |
 | 2026-11-14 | Feature responsibility subpackages | CONFIRMED | Approved routes, schemas, models, services, dependencies, and feature tests. |
+| 2026-11-22 | Responsibility-based test subpackages | CONFIRMED | Mirror feature responsibilities inside `tests/`; keep infrastructure tests grouped under core. |
 | 2026-11-11 | Feature-based source organization (TECH-014)       | CONFIRMED | Each feature owns its code and pytest suite.        |
 
 ---
@@ -914,6 +918,7 @@ This register uses the **interactive Q&A numbering**, which differs from the ori
 
 | Date       | Version | Change                                                                                                                                                                         |
 | ---------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 2026-11-22 | 0.4.3 | Require responsibility-based test subpackages within each feature; align authentication examples and preserve the standard container pytest trigger. |
 | 2026-11-17 | 0.4.2 | Require directory-only core and feature roots with `__init__.py` as the sole file exception; align lifespan and settings locations with responsibility subdirectories. |
 | 2026-11-08 | 0.2.0   | Reconciled confirmed interactive decisions Q001–Q055 across requirement definitions, memory lifecycle, deferred features and decision register.                                |
 | 2026-11-08 | 0.3.0   | Incorporated Q056–Q061: shared-table tenancy, canonical embeddings, checkpoint-authoritative full history, monthly AI credits, manual test plans and paid-launch payment gate. |

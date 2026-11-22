@@ -2,8 +2,8 @@
 
 > **Source of truth:** [Implementation plan](../chathat-implementation-plan.md), Phase 01.  
 > **Specification:** [ChatHat specification](../chathat-spec.md), section 24 (Docker Compose and Nginx).  
-> **Progress:** 11 / 14 lessons completed (78.6%).\
-> **Last reviewed:** 2026-11-19.
+> **Progress:** 12 / 14 lessons completed (85.7%).\
+> **Last reviewed:** 2026-11-22.
 
 ## Lesson progress
 
@@ -22,7 +22,7 @@ Update a row **only after** the lesson's work and verification are complete. Rec
 | P01-I04 | Implement | Typed settings and environment boundaries | Completed | 2026-11-17 | [Configuration review and regression evidence](phase-01-notes.md#p01-i04--typed-settings-and-environment-boundaries) | Config validation, secret masking/exclusion, typed AppState, and dependency wiring reviewed; 12 regression tests pass. Dedicated coverage follows in T04. |
 | P01-T04 | Test | Configuration and secret safety | Completed | 2026-11-17 | [Test review and supplied container evidence](phase-01-notes.md#p01-t04--configuration-and-secret-safety) | 29 passed in 1.39s; 17 configuration cases cover precedence, validation, secret safety, app isolation, and dependency overrides. |
 | P01-I05 | Implement | PostgreSQL/pgvector, SQLModel and Alembic | Completed | 2026-11-19 | [Diff review and supplied migration/query/pytest evidence](phase-01-notes.md#p01-i05--postgresqlpgvector-sqlmodel-and-alembic) | Async resources, isolated test service, and first migration reviewed; pgvector 0.8.7 query and 29 regression tests pass. Restart and lifecycle coverage follow in T05. |
-| P01-T05 | Test | PostgreSQL persistence and migration lifecycle | Not started | — | — | — |
+| P01-T05 | Test | PostgreSQL persistence and migration lifecycle | Completed | 2026-11-22 | [Review and verified 48-pass restart evidence](phase-01-notes.md#p01-t05--postgresql-persistence-and-migration-lifecycle) | 48 tests pass through the standard command, including real test-container restart persistence; no acceptance deferral. |
 | P01-I06 | Implement | Containerized developer commands and CI | Not started | — | — | — |
 | P01-T06 | Test | Fresh-checkout reproducibility and CI contract | Not started | — | — | — |
 
@@ -40,8 +40,8 @@ Update a row **only after** the lesson's work and verification are complete. Rec
 
 - [x] Nginx routes requests to FastAPI through Docker Compose.
 - [ ] Development FastAPI source changes reload inside its container.
-- [ ] PostgreSQL/pgvector persists data and passes migrations.
-- [ ] Isolated pytest runs inside containers without touching development or production databases.
+- [x] PostgreSQL/pgvector persists data and passes migrations.
+- [x] Isolated pytest runs inside containers without touching development or production databases.
 - [ ] Containerized developer commands and CI checks are reproducible from a fresh checkout.
 - [ ] All 14 lesson rows are marked **Completed** with verification evidence.
 
