@@ -2,12 +2,12 @@
 
 > **Source of truth:** [Implementation plan](../chathat-implementation-plan.md), Phase 01.  
 > **Specification:** [ChatHat specification](../chathat-spec.md), section 24 (Docker Compose and Nginx).  
-> **Progress:** 12 / 14 lessons completed (85.7%).\
+> **Progress:** 13 / 14 lessons completed (92.9%), 1 skipped by request.\
 > **Last reviewed:** 2026-11-22.
 
 ## Lesson progress
 
-Update a row **only after** the lesson's work and verification are complete. Record the completion date as `YYYY-MM-DD` and link the relevant commit/PR or test evidence where available.
+Record completed work after verification and link the relevant evidence. For a user-approved skip, link the decision and leave the completion date blank.
 
 | Lesson | Type | Lesson name | Status | Date completed | Commit / evidence | Notes |
 |---|---|---|---|---|---|---|
@@ -23,15 +23,15 @@ Update a row **only after** the lesson's work and verification are complete. Rec
 | P01-T04 | Test | Configuration and secret safety | Completed | 2026-11-17 | [Test review and supplied container evidence](phase-01-notes.md#p01-t04--configuration-and-secret-safety) | 29 passed in 1.39s; 17 configuration cases cover precedence, validation, secret safety, app isolation, and dependency overrides. |
 | P01-I05 | Implement | PostgreSQL/pgvector, SQLModel and Alembic | Completed | 2026-11-19 | [Diff review and supplied migration/query/pytest evidence](phase-01-notes.md#p01-i05--postgresqlpgvector-sqlmodel-and-alembic) | Async resources, isolated test service, and first migration reviewed; pgvector 0.8.7 query and 29 regression tests pass. Restart and lifecycle coverage follow in T05. |
 | P01-T05 | Test | PostgreSQL persistence and migration lifecycle | Completed | 2026-11-22 | [Review and verified 48-pass restart evidence](phase-01-notes.md#p01-t05--postgresql-persistence-and-migration-lifecycle) | 48 tests pass through the standard command, including real test-container restart persistence; no acceptance deferral. |
-| P01-I06 | Implement | Containerized developer commands and CI | Not started | — | — | — |
-| P01-T06 | Test | Fresh-checkout reproducibility and CI contract | Not started | — | — | — |
+| P01-I06 | Implement | Containerized developer commands and CI | Completed | 2026-11-22 | [Checkout review and GitHub Actions evidence](phase-01-notes.md#p01-i06--containerized-developer-commands-and-ci) | Containerized commands documented, static checks pass, and CI reports 48 passing tests with diagnostics uploaded. |
+| P01-T06 | Test | Fresh-checkout reproducibility and CI contract | Skipped | — | [User decision and existing CI evidence](phase-01-notes.md#p01-t06--fresh-checkout-reproducibility-and-ci-contract) | User waived the separate CI verification lesson. The successful P01-I06 run remains on record. |
 
-**Status values:** `Not started`, `In progress`, `Blocked`, `Completed`. A lesson is **Completed** only when its acceptance checks pass; a testing lesson additionally requires passing pytest results.
+**Status values:** `Not started`, `In progress`, `Blocked`, `Completed`, `Skipped`. A lesson is **Completed** only when its acceptance checks pass. A completed testing lesson also requires passing pytest results. A skipped lesson stays in the progress denominator.
 
 ## Completion rules
 
 1. Follow the listed order: each implementation lesson (`Ixx`) is immediately followed by its matching pytest lesson (`Txx`). Do not begin the next implementation lesson until the preceding test lesson passes.
-2. Update the status when work starts, finishes, or becomes blocked. Record a brief blocker or outcome in **Notes**.
+2. Update the status when work starts, finishes, becomes blocked, or is skipped at the user's request. P01-T06 is the user-approved exception to the sequence rule above.
 3. When completed, add the date and a commit/PR link or reproducible command and test result under **Commit / evidence**. Never mark lessons completed solely because they are planned.
 4. Calculate progress as **completed rows / 14** and keep the summary above synchronized with the table.
 5. Preserve previous outcomes or important decisions in the notes/history below if a lesson is reopened.

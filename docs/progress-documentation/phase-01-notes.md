@@ -318,3 +318,23 @@ Added package markers for all four groups and changed the database helper import
 Assistant-run post-refactor verification used exactly `docker compose -f compose.yaml -f compose.dev.yaml exec api python -m pytest -v` and observed **48 passed, 28 existing warnings in 3.93s**. All nested tests were discovered, including actual container-restart persistence coverage. Index and staged/unstaged whitespace checks passed. No extra test trigger, dependency, service, environment variable, or manual test preparation was introduced by the directory refactor.
 
 The rule is now documented in `AGENTS.md`, specification §2.2 (v0.4.3), the implementation plan, and the lesson delivery guide. This documentation update does not change code or invalidate the preceding test evidence; pytest was not rerun for prose-only changes. T05 remains completed, phase progress remains **12/14 (85.7%)**, and the next lesson remains **P01-I06**.
+
+## P01-I06 — Containerized developer commands and CI
+
+Verified 2026-11-22 against checkout `ee54959e05725289b66964dcc283fa9fb14a334e`. README documents Compose startup, health, Alembic, lint, type checks, pytest, logs, and stop. The Dockerfile installs locked development dependencies including Ruff and mypy. CI clears the API source bind mount using `compose.ci.yaml`, starts Nginx and its dependencies, and keeps the existing separate `test-db` service and volume. The pytest step allocates a pseudo-terminal with `script --return` and saves stdout through `tee` under Bash with pipefail.
+
+Developer-supplied [GitHub Actions run](https://github.com/EslamKamel89/ChatHat/actions/runs/45040080767) checked out the same commit and reported:
+
+- `docker compose -f compose.yaml -f compose.dev.yaml -f compose.ci.yaml config --quiet` succeeded. Startup created separate development and test volumes and all four targeted services became healthy.
+- `curl --fail --silent --show-error http://127.0.0.1:8000/health` returned `{"status":"ok"}` from Nginx.
+- `docker compose -f compose.yaml -f compose.dev.yaml exec -T api ruff check src migrations` passed. The equivalent container `mypy` invocation reported no issues in 14 source files.
+- `docker compose -f compose.yaml -f compose.dev.yaml exec api python -m pytest -v` reported **48 passed, 28 warnings in 6.45s**, including migration upgrade, downgrade and re-upgrade, and isolated test-container restart persistence.
+- The diagnostics artifact uploaded and Compose teardown completed. The runner issued a nonblocking Node.js 20 deprecation warning for the two v4 actions, which it ran on Node.js 24.
+
+Assistant reviewed the checkout and whitespace checks and used the supplied run for the covered checks. No runtime checks were repeated and no development migration was run during verification. P01-I06 is complete. P01-T06 remains next and can reuse this positive-path evidence. Observed failure-path behavior remains to be verified in the paired lesson.
+
+## P01-T06 — Fresh-checkout reproducibility and CI contract
+
+**Skipped by user decision on 2026-11-22.** The user decided that the CI pipeline did not need a separate testing lesson.
+
+The [P01-I06 verification](#p01-i06--containerized-developer-commands-and-ci) records the successful GitHub Actions run, including startup on fresh volumes, Nginx health, 48 passing tests, and diagnostics upload. CI behavior on failure remains unverified. P01-T06 has no completion date, and Phase 01 records 13 of 14 lessons completed (92.9%) and one skipped.

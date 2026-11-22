@@ -5,6 +5,9 @@
   ".env.example": {
     "summary": "Development HTTP/debug and pgAdmin settings with empty database and pgAdmin password placeholders."
   },
+  ".github/workflows/ci.yml": {
+    "summary": "Validates and starts the CI Compose stack, checks Nginx, runs lint, type checks and pytest, uploads diagnostics, and tears down the stack."
+  },
   ".gitignore": {
     "summary": "Excludes dependencies, generated artifacts, local configuration, secrets, and runtime data from Git."
   },
@@ -12,10 +15,13 @@
     "summary": "Repository instructions for guided lessons, architecture, safe execution, and navigation-index maintenance."
   },
   "README.md": {
-    "summary": "Project overview and links to the product specification, implementation plan, and progress tracker."
+    "summary": "Project overview, documentation links, and containerized setup, migration, static check, test, and service commands."
   },
   "commands.txt": {
     "summary": "Development Compose startup, containerized pytest, shutdown, migration revision generation, and upgrade commands."
+  },
+  "compose.ci.yaml": {
+    "summary": "Clears the development API source bind mount so CI exercises source packaged in the image."
   },
   "compose.dev.yaml": {
     "summary": "Development API settings, reload and source mount, restartable marked test PostgreSQL service, and loopback Nginx and pgAdmin interfaces."
@@ -33,7 +39,7 @@
     "summary": "Public stylesheet declaring support for light and dark color schemes."
   },
   "pyproject.toml": {
-    "summary": "Python package metadata, uv_build configuration, and runtime/development dependency declarations."
+    "summary": "Python package metadata, uv_build configuration, runtime and development dependencies, and Ruff and mypy settings."
   },
   "src/chathat/__init__.py": {
     "summary": "Marks the chathat application package.",
