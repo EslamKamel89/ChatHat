@@ -2,7 +2,7 @@
 
 **ChatHat** is a multi-tenant SaaS platform for creating AI-powered website chatbots. Organizations can configure and publish chatbots, connect reusable knowledge bases, upload documents, and embed a chatbot on their websites. ChatHat is designed to answer visitors using the organization's own content, offer support actions when information is insufficient, and provide administrators with conversation and answer-inspection tools.
 
-> **Project status:** Planning and implementation preparation. The repository currently contains project documentation; the application is being built incrementally.
+> **Project status:** The containerized FastAPI foundation includes Nginx, PostgreSQL/pgvector, Alembic, and container-based tests. See the Phase 01 tracker for lesson progress.
 
 ## Planned technology stack
 
@@ -32,7 +32,46 @@ ChatHat is implemented as a **project-based learning curriculum**. Each lesson b
 
 ## Getting started
 
-The application setup and executable Docker Compose commands will be documented as the foundation lessons are implemented. Until then, start with the [implementation plan](docs/chathat-implementation-plan.md) and track work in the [Phase 01 progress document](docs/progress-documentation/phase_1.md).
+Install Docker with Compose V2. On a fresh checkout, copy `.env.example` to `.env`
+and set `CHATHAT_DB_PASSWORD` and `CHATHAT_PGADMIN_PASSWORD`. Use a URL-safe
+database password. Keep `.env` local.
+
+```sh
+docker compose -f compose.yaml -f compose.dev.yaml up --build -d --wait
+curl --fail --silent --show-error http://127.0.0.1:8000/health
+```
+
+Nginx returns `{"status":"ok"}`. If you set `CHATHAT_DEV_PORT`, use that port.
+Python source changes reload the API. Rebuild after changing dependencies,
+migrations, or image-baked configuration.
+
+Apply and inspect migrations on the local development database:
+
+```sh
+docker compose -f compose.yaml -f compose.dev.yaml exec api python -m alembic upgrade head
+docker compose -f compose.yaml -f compose.dev.yaml exec api python -m alembic current
+```
+
+Run static checks and pytest inside the API container:
+
+```sh
+docker compose -f compose.yaml -f compose.dev.yaml exec api ruff check src migrations
+docker compose -f compose.yaml -f compose.dev.yaml exec api mypy
+docker compose -f compose.yaml -f compose.dev.yaml exec api python -m pytest -v
+```
+
+Pytest prepares isolated databases on `test-db` automatically. Run one suite
+at a time per stack because the persistence test restarts that service.
+
+Inspect or stop the stack:
+
+```sh
+docker compose -f compose.yaml -f compose.dev.yaml ps
+docker compose -f compose.yaml -f compose.dev.yaml logs --tail=100 api nginx db test-db
+docker compose -f compose.yaml -f compose.dev.yaml stop
+```
+
+`stop` preserves containers and database volumes. Start the stack again with `up`.
 
 ## Repository
 
