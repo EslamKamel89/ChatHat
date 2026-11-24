@@ -1284,5 +1284,98 @@
         "returns": "None"
       }
     ]
+  },
+  "src/chathat/organizations/tests/__init__.py": {
+    "summary": "Marks the organization feature test package.",
+    "namespace": "chathat.organizations.tests"
+  },
+  "src/chathat/organizations/tests/models/__init__.py": {
+    "summary": "Marks the organization model test package.",
+    "namespace": "chathat.organizations.tests.models"
+  },
+  "src/chathat/organizations/tests/models/test_account_persistence.py": {
+    "summary": "PostgreSQL integration tests for organization membership, account email, and invitation persistence constraints.",
+    "namespace": "chathat.organizations.tests.models.test_account_persistence",
+    "functions": [
+      {
+        "name": "migrated_url",
+        "summary": "Migrates a disposable PostgreSQL database to Alembic head for one test case.",
+        "returns": "Iterator[URL]",
+        "decorators": [
+          "pytest.fixture"
+        ]
+      },
+      {
+        "name": "seed_tenants",
+        "summary": "Flushes two organizations and a North Studio owner, returning their IDs.",
+        "async": true,
+        "parameters": [
+          {
+            "name": "session",
+            "type": "AsyncSession"
+          }
+        ],
+        "returns": "tuple[int, int, int]"
+      },
+      {
+        "name": "test_owner_can_persist_invitation_for_own_organization",
+        "summary": "Reads a committed same-organization invitation back in a new session.",
+        "parameters": [
+          {
+            "name": "migrated_url",
+            "type": "URL"
+          }
+        ],
+        "returns": "None"
+      },
+      {
+        "name": "test_user_membership_and_email_constraints",
+        "summary": "Checks PostgreSQL errors for invalid membership and noncanonical or duplicate account emails.",
+        "parameters": [
+          {
+            "name": "migrated_url",
+            "type": "URL"
+          },
+          {
+            "name": "tenant",
+            "type": "str"
+          },
+          {
+            "name": "email",
+            "type": "str"
+          },
+          {
+            "name": "sqlstate",
+            "type": "str"
+          }
+        ],
+        "returns": "None",
+        "decorators": [
+          "pytest.mark.parametrize"
+        ]
+      },
+      {
+        "name": "test_invitation_issuer_and_token_constraints",
+        "summary": "Checks PostgreSQL errors for mismatched or missing issuers and duplicate token digests.",
+        "parameters": [
+          {
+            "name": "migrated_url",
+            "type": "URL"
+          },
+          {
+            "name": "scenario_name",
+            "type": "str"
+          },
+          {
+            "name": "sqlstate",
+            "type": "str"
+          }
+        ],
+        "returns": "None",
+        "decorators": [
+          "pytest.mark.parametrize"
+        ]
+      }
+    ]
   }
 }

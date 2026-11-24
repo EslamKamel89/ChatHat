@@ -19,6 +19,17 @@ P02-T01 is next and will add dedicated PostgreSQL pytest coverage for uniqueness
 
 ## P02-T01 · Organization and account data model tests
 
+Verified on 2026-11-24 against the working tree based on `0cdab2f`. The suite uses a fresh disposable PostgreSQL database on `test-db` for each case and applies Alembic head before exercising the schema. The running API container's migration files matched the checkout by SHA-256.
+
+The tests cover committed same-tenant invitation persistence, required and valid account membership, canonical and globally unique account emails, valid invitation issuer references, rejection of a cross-tenant issuer, and unique invitation token digests. Negative cases assert the PostgreSQL SQLSTATE for the expected constraint class. The account failure cases also verify that the original owner's membership persists after rollback. This lesson covers database constraints. Request-level authorization is tested in later lessons.
+
+Assistant-run verification:
+
+- `docker compose -f compose.yaml -f compose.dev.yaml exec api python -m pytest -v src/chathat/organizations/tests/models/test_account_persistence.py` passed all 10 focused cases.
+- `docker compose -f compose.yaml -f compose.dev.yaml exec api python -m pytest -v` reported 58 passed and 40 deprecation warnings in 4.27s.
+
+The existing navigation index entries matched the test package markers and declarations. P02-I02, Email/password authentication, is next.
+
 ## P02-I02 · Email/password authentication
 
 ## P02-T02 · Email/password authentication tests

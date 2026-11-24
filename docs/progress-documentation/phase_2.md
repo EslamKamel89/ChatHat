@@ -2,7 +2,7 @@
 
 > **Source of truth:** [Implementation plan](../chathat-implementation-plan.md#phase-02--organizations-identity-and-authorization), Phase 02.\
 > **Specification:** [ChatHat specification](../chathat-spec.md#3-organizations-authentication-and-authorization), section 3 (Organizations, authentication, and authorization).\
-> **Progress:** 1 / 10 lessons completed (10%).\
+> **Progress:** 2 / 10 lessons completed (20%).\
 > **Last reviewed:** 2026-11-24.
 
 ## Lesson progress
@@ -12,7 +12,7 @@ Record completed work after verification and link the relevant entry in the [Pha
 | Lesson | Type | Lesson name | Status | Date completed | Commit / evidence | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
 | P02-I01 | Implement | Organization and account data model | Completed | 2026-11-24 | [Isolated migration, ORM, and regression checks](phase_2_notes.md#p02-i01--organization-and-account-data-model) | Required organization membership and tenant-bound invitation issuer verified. |
-| P02-T01 | Test | Organization and account data model | Not started | — | — | — |
+| P02-T01 | Test | Organization and account data model | Completed | 2026-11-24 | [Focused and full pytest results](phase_2_notes.md#p02-t01--organization-and-account-data-model-tests) | Verified account and invitation persistence constraints on isolated PostgreSQL. |
 | P02-I02 | Implement | Email/password authentication | Not started | — | — | — |
 | P02-T02 | Test | Email/password authentication | Not started | — | — | — |
 | P02-I03 | Implement | Google OAuth and account linking | Not started | — | — | — |
