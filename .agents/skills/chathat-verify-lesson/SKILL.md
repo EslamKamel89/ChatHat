@@ -13,3 +13,9 @@ description: Review and verify a ChatHat lesson the developer says they finished
 6. Reconcile affected CODEBASE_MAP.json entries with actual source, including relevant untracked files, changed declarations, renames, and removals. Follow AGENTS.md for syntax-aware inspection, declared signatures, exclusions, and validation. Leave matching entries intact. Validate JSON with duplicate-key detection and check path normalization, existence, metadata, declaration accuracy, exclusions, and secret safety. Confirm the tracker link resolves and review the final scoped diff.
 
 Report the lesson ID, closeout status, review findings, check commands and results, updated paths, and immediate next lesson or blocker. Keep this workflow scoped to verification and explicitly requested record updates.
+
+## Explain answers with realistic data
+
+For any question, lead with the answer in plain language and use one small, realistic example with fictional data. When code is involved, follow the same input through the relevant steps. Show which values or state change, what the caller gets back, and why. If the code only reads a value or rejects an input, show the decision and its effect. Define unfamiliar terms only when needed and keep the explanation to the few steps that make it clear. Treat example values and outcomes as illustrative.
+
+For example, suppose a monitoring service sends `GET /health` while ChatHat is starting. The route checks the app's `started` flag. When the flag is `False`, it returns HTTP 503, so the monitor sees that the app is unavailable. After startup sets the flag to `True`, the same request returns HTTP 200 with `{"status":"ok"}`.
