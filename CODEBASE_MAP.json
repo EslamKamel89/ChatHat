@@ -18,7 +18,7 @@
     "summary": "Project overview, documentation links, and containerized setup, migration, static check, test, and service commands."
   },
   "commands.txt": {
-    "summary": "Development Compose startup, containerized pytest, shutdown, migration revision generation, and upgrade commands."
+    "summary": "Development Compose startup, containerized pytest, shutdown, Alembic revision creation with and without autogeneration, and upgrade commands."
   },
   "compose.ci.yaml": {
     "summary": "Clears the development API source bind mount so CI exercises source packaged in the image."
@@ -576,7 +576,7 @@
     "summary": "Alembic migration paths, revision-generation options, and console logging configuration without a populated database URL."
   },
   "migrations/env.py": {
-    "summary": "Async Alembic environment using shared SQLModel metadata, validated configured or programmatic database URLs, optional supplied connections, and unpooled migration connections.",
+    "summary": "Async Alembic environment registering account and organization models with shared SQLModel metadata, validating database URLs and supporting supplied or unpooled migration connections.",
     "namespace": "migrations.env",
     "functions": [
       {
@@ -949,6 +949,10 @@
           {
             "name": "database_url",
             "type": "URL"
+          },
+          {
+            "name": "head_revision",
+            "type": "str"
           }
         ],
         "returns": "None"
@@ -1004,6 +1008,10 @@
           {
             "name": "prepared_url",
             "type": "URL"
+          },
+          {
+            "name": "head_revision",
+            "type": "str"
           }
         ],
         "returns": "None"
@@ -1023,6 +1031,14 @@
         "name": "test_database_dependency_returns_503_without_resources",
         "summary": "Checks missing database resources yield the expected HTTP 503 response.",
         "returns": "None"
+      },
+      {
+        "name": "head_revision",
+        "summary": "Reads the current Alembic head from the revision scripts.",
+        "returns": "str",
+        "decorators": [
+          "pytest.fixture"
+        ]
       }
     ]
   },
@@ -1041,5 +1057,232 @@
   "src/chathat/core/tests/infrastructure/__init__.py": {
     "summary": "Marks the core infrastructure test package.",
     "namespace": "chathat.core.tests.infrastructure"
+  },
+  "src/chathat/auth/__init__.py": {
+    "summary": "Marks the authentication feature package.",
+    "namespace": "chathat.auth"
+  },
+  "src/chathat/auth/models/user.py": {
+    "summary": "Dashboard account with required organization membership, unique canonical email, and an organization relationship.",
+    "namespace": "chathat.auth.models.user",
+    "classes": [
+      {
+        "name": "User",
+        "kind": "class",
+        "bases": [
+          "SQLModel"
+        ],
+        "properties": [
+          {
+            "name": "id",
+            "type": "int | None",
+            "default": "primary_key_field()"
+          },
+          {
+            "name": "organization_id",
+            "type": "int",
+            "default": "organization_id_field()"
+          },
+          {
+            "name": "email",
+            "type": "str",
+            "default": "Field(max_length=320, unique=True)"
+          },
+          {
+            "name": "is_owner",
+            "type": "bool",
+            "default": "Field(default=False)"
+          },
+          {
+            "name": "created_at",
+            "type": "datetime | None",
+            "default": "created_at_field()"
+          },
+          {
+            "name": "updated_at",
+            "type": "datetime | None",
+            "default": "updated_at_field()"
+          },
+          {
+            "name": "organization",
+            "type": "Organization",
+            "default": "Relationship()"
+          }
+        ]
+      }
+    ]
+  },
+  "src/chathat/core/database/models.py": {
+    "summary": "Field factories for integer primary keys, timestamps, and indexed organization foreign keys.",
+    "namespace": "chathat.core.database.models",
+    "functions": [
+      {
+        "name": "primary_key_field",
+        "parameters": [],
+        "returns": "int | None"
+      },
+      {
+        "name": "created_at_field",
+        "parameters": [],
+        "returns": "datetime"
+      },
+      {
+        "name": "updated_at_field",
+        "parameters": [],
+        "returns": "datetime"
+      },
+      {
+        "name": "organization_id_field",
+        "parameters": [],
+        "returns": "int"
+      }
+    ]
+  },
+  "src/chathat/organizations/__init__.py": {
+    "summary": "Marks the organizations feature package.",
+    "namespace": "chathat.organizations"
+  },
+  "src/chathat/organizations/models/organization.py": {
+    "summary": "Organization tenant identity and timestamps.",
+    "namespace": "chathat.organizations.models.organization",
+    "classes": [
+      {
+        "name": "Organization",
+        "kind": "class",
+        "bases": [
+          "SQLModel"
+        ],
+        "properties": [
+          {
+            "name": "id",
+            "type": "int | None",
+            "default": "primary_key_field()"
+          },
+          {
+            "name": "created_at",
+            "type": "datetime | None",
+            "default": "created_at_field()"
+          },
+          {
+            "name": "updated_at",
+            "type": "datetime | None",
+            "default": "updated_at_field()"
+          },
+          {
+            "name": "name",
+            "type": "str",
+            "default": "Field(max_length=200)"
+          }
+        ]
+      }
+    ]
+  },
+  "src/chathat/organizations/models/invitation.py": {
+    "summary": "Recipient-bound organization invitation with a unique token digest and tenant-scoped issuer relationship.",
+    "namespace": "chathat.organizations.models.invitation",
+    "classes": [
+      {
+        "name": "Invitation",
+        "kind": "class",
+        "bases": [
+          "SQLModel"
+        ],
+        "properties": [
+          {
+            "name": "id",
+            "type": "int | None",
+            "default": "primary_key_field()"
+          },
+          {
+            "name": "organization_id",
+            "type": "int",
+            "default": "organization_id_field()"
+          },
+          {
+            "name": "invited_by_user_id",
+            "type": "int",
+            "default": "Field(nullable=False)"
+          },
+          {
+            "name": "token_digest",
+            "type": "str",
+            "default": "Field(max_length=64, unique=True)"
+          },
+          {
+            "name": "email",
+            "type": "str",
+            "default": "Field(max_length=320)"
+          },
+          {
+            "name": "expires_at",
+            "type": "datetime",
+            "default": "Field(sa_type=DateTime(timezone=True), nullable=False)"
+          },
+          {
+            "name": "accepted_at",
+            "type": "datetime | None",
+            "default": "Field(default=None, sa_type=DateTime(timezone=True), nullable=True)"
+          },
+          {
+            "name": "created_at",
+            "type": "datetime | None",
+            "default": "created_at_field()"
+          },
+          {
+            "name": "updated_at",
+            "type": "datetime | None",
+            "default": "updated_at_field()"
+          },
+          {
+            "name": "organization",
+            "type": "Organization",
+            "default": "Relationship()"
+          },
+          {
+            "name": "invited_by_user",
+            "type": "User",
+            "default": "Relationship(sa_relationship_kwargs={'viewonly': True})"
+          }
+        ]
+      }
+    ]
+  },
+  "migrations/versions/0002_organization_accounts_create_organizations_users_and_.py": {
+    "summary": "Creates and reverses the organization, account, and invitation schema.",
+    "namespace": "migrations.versions.0002_organization_accounts_create_organizations_users_and_",
+    "properties": [
+      {
+        "name": "revision",
+        "type": "str",
+        "default": "'0002_organization_accounts'"
+      },
+      {
+        "name": "down_revision",
+        "type": "Union[str, None]",
+        "default": "'0001_pgvector'"
+      },
+      {
+        "name": "branch_labels",
+        "type": "Union[str, Sequence[str], None]",
+        "default": "None"
+      },
+      {
+        "name": "depends_on",
+        "type": "Union[str, Sequence[str], None]",
+        "default": "None"
+      }
+    ],
+    "functions": [
+      {
+        "name": "upgrade",
+        "parameters": [],
+        "returns": "None"
+      },
+      {
+        "name": "downgrade",
+        "parameters": [],
+        "returns": "None"
+      }
+    ]
   }
 }

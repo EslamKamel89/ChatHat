@@ -6,8 +6,11 @@ from sqlalchemy import pool
 from sqlalchemy.engine import URL, Connection, make_url
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
+from chathat.auth.models.user import User  # noqa: F401
 from chathat.core.database import metadata
 from chathat.core.settings.config import Config as AppConfig
+from chathat.organizations.models.invitation import Invitation  # noqa: F401
+from chathat.organizations.models.organization import Organization  # noqa: F401
 
 config = context.config
 

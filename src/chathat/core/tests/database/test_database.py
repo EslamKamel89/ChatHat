@@ -2,6 +2,8 @@ import asyncio
 from collections.abc import Iterator
 
 import pytest
+from alembic.config import Config as AlembicConfig
+from alembic.script import ScriptDirectory
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
@@ -113,6 +115,7 @@ def test_database_cleanup_runs_after_success_or_failure(
 
 def test_migration_upgrade_downgrade_and_reupgrade(
     database_url: URL,
+    head_revision: str,
 ) -> None:
     extension_query = "SELECT extversion FROM pg_extension WHERE extname = 'vector'"
 
@@ -123,7 +126,7 @@ def test_migration_upgrade_downgrade_and_reupgrade(
 
     assert (
         asyncio.run(scalar(database_url, "SELECT version_num FROM alembic_version"))
-        == "0001_pgvector"
+        == head_revision
     )
     assert asyncio.run(scalar(database_url, extension_query)) is not None
     assert (
@@ -147,7 +150,7 @@ def test_migration_upgrade_downgrade_and_reupgrade(
 
     assert (
         asyncio.run(scalar(database_url, "SELECT version_num FROM alembic_version"))
-        == "0001_pgvector"
+        == head_revision
     )
 
 
@@ -242,6 +245,7 @@ def test_rollback_close_and_committed_reconnection(
 
 def test_committed_data_survives_test_database_container_restart(
     prepared_url: URL,
+    head_revision: str,
 ) -> None:
     async def scenario() -> None:
         async with database_resources(prepared_url) as database:
@@ -261,12 +265,18 @@ def test_committed_data_survives_test_database_container_restart(
                     await session.execute(text("SELECT id, label, score FROM probe"))
                 ).one()
                 assert tuple(row) == (1, "survives-container-restart", 7)
-                assert await session.scalar(
-                    text("SELECT version_num FROM alembic_version")
-                ) == "0001_pgvector"
-                assert await session.scalar(
-                    text("SELECT '[1,2,3]'::vector <-> '[1,2,3]'::vector")
-                ) == 0
+                assert (
+                    await session.scalar(
+                        text("SELECT version_num FROM alembic_version")
+                    )
+                    == head_revision
+                )
+                assert (
+                    await session.scalar(
+                        text("SELECT '[1,2,3]'::vector <-> '[1,2,3]'::vector")
+                    )
+                    == 0
+                )
 
     asyncio.run(scenario())
 
@@ -353,3 +363,11 @@ def test_database_dependency_returns_503_without_resources() -> None:
 
     assert response.status_code == 503
     assert response.json() == {"detail": "Database unavailable"}
+
+
+@pytest.fixture
+def head_revision() -> str:
+    script = ScriptDirectory.from_config(AlembicConfig("/app/alembic.ini"))
+    revision = script.get_current_head()
+    assert revision is not None
+    return revision

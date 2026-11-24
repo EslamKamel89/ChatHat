@@ -2,7 +2,7 @@
 
 > **Source of truth:** [Implementation plan](../chathat-implementation-plan.md#phase-02--organizations-identity-and-authorization), Phase 02.\
 > **Specification:** [ChatHat specification](../chathat-spec.md#3-organizations-authentication-and-authorization), section 3 (Organizations, authentication, and authorization).\
-> **Progress:** 0 / 10 lessons completed (0%).\
+> **Progress:** 1 / 10 lessons completed (10%).\
 > **Last reviewed:** 2026-11-24.
 
 ## Lesson progress
@@ -11,7 +11,7 @@ Record completed work after verification and link the relevant entry in the [Pha
 
 | Lesson | Type | Lesson name | Status | Date completed | Commit / evidence | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
-| P02-I01 | Implement | Organization and account data model | Not started | — | — | — |
+| P02-I01 | Implement | Organization and account data model | Completed | 2026-11-24 | [Isolated migration, ORM, and regression checks](phase_2_notes.md#p02-i01--organization-and-account-data-model) | Required organization membership and tenant-bound invitation issuer verified. |
 | P02-T01 | Test | Organization and account data model | Not started | — | — | — |
 | P02-I02 | Implement | Email/password authentication | Not started | — | — | — |
 | P02-T02 | Test | Email/password authentication | Not started | — | — | — |
@@ -34,7 +34,7 @@ Record completed work after verification and link the relevant entry in the [Pha
 
 ## Phase exit checklist
 
-- [ ] PostgreSQL migrations establish organization and account tables and enforce one organization per user.
+- [x] PostgreSQL migrations establish organization and account tables and enforce one organization per user.
 - [ ] Email/password sign-in and sign-out use secure sessions, with CSRF protection and authenticated dashboard access.
 - [ ] Google OAuth validates callback state and nonce and applies the agreed account-linking policy.
 - [ ] Custom roles enforce permissions and tenant boundaries on the server.

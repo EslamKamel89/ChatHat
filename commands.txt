@@ -18,3 +18,10 @@ docker compose -f compose.yaml -f compose.dev.yaml run --rm --no-deps \
 docker compose -f compose.yaml -f compose.dev.yaml exec api \
   python -m alembic upgrade head
 
+# command for creating migration using auto generation
+docker compose -f compose.yaml -f compose.dev.yaml run --rm \
+  --user "$(id -u):$(id -g)" \
+  --volume "$PWD/migrations:/app/migrations" \
+  api python -m alembic revision --autogenerate \
+  --rev-id 0002_organization_accounts \
+  -m "Create organizations, users, and invitations"
